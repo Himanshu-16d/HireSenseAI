@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { 
   updateAccountInfo, 
   updatePassword,
@@ -18,7 +18,6 @@ import {
 
 export default function SettingsPage() {
   const { data: session } = useSession()
-  const { toast } = useToast()
   
   // Account Information State
   const [accountInfo, setAccountInfo] = useState({
@@ -48,22 +47,22 @@ export default function SettingsPage() {
 
   // Handle Account Info Update
   const handleAccountUpdate = async () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to update your account")
+      return
+    }
+
     const result = await updateAccountInfo(accountInfo)
-    toast({
-      title: result.success ? "Success" : "Error",
+    toast(result.success ? "Success" : "Error", {
       description: result.message,
-      variant: result.success ? "default" : "destructive"
+      ...(result.success ? {} : { style: { backgroundColor: "var(--destructive)", color: "white" } })
     })
   }
 
   // Handle Password Update
   const handlePasswordUpdate = async () => {
     if (passwordInfo.newPassword !== passwordInfo.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      })
+      toast.error("Passwords do not match")
       return
     }
 
@@ -72,10 +71,9 @@ export default function SettingsPage() {
       newPassword: passwordInfo.newPassword
     })
 
-    toast({
-      title: result.success ? "Success" : "Error",
+    toast(result.success ? "Success" : "Error", {
       description: result.message,
-      variant: result.success ? "default" : "destructive"
+      ...(result.success ? {} : { style: { backgroundColor: "var(--destructive)", color: "white" } })
     })
 
     if (result.success) {
@@ -90,20 +88,18 @@ export default function SettingsPage() {
   // Handle Notification Settings Update
   const handleNotificationUpdate = async () => {
     const result = await updateNotificationSettings(notificationSettings)
-    toast({
-      title: result.success ? "Success" : "Error",
+    toast(result.success ? "Success" : "Error", {
       description: result.message,
-      variant: result.success ? "default" : "destructive"
+      ...(result.success ? {} : { style: { backgroundColor: "var(--destructive)", color: "white" } })
     })
   }
 
   // Handle Privacy Settings Update
   const handlePrivacyUpdate = async () => {
     const result = await updatePrivacySettings(privacySettings)
-    toast({
-      title: result.success ? "Success" : "Error",
+    toast(result.success ? "Success" : "Error", {
       description: result.message,
-      variant: result.success ? "default" : "destructive"
+      ...(result.success ? {} : { style: { backgroundColor: "var(--destructive)", color: "white" } })
     })
   }
 
@@ -196,22 +192,6 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>LinkedIn Integration</CardTitle>
-                <CardDescription>Connect your LinkedIn account</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">LinkedIn</p>
-                    <p className="text-sm text-muted-foreground">Connect to find jobs and import profile data</p>
-                  </div>
-                  <Button>Connect</Button>
-                </div>
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>Other Integrations</CardTitle>

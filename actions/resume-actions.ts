@@ -4,6 +4,9 @@ import { generateText } from "ai"
 import { groq } from "@ai-sdk/groq"
 import type { ResumeData, JobTarget, ResumeEnhancementResult } from "@/types/resume"
 
+// Initialize Groq client with API key
+const groqClient = groq(process.env.GROQ_API_KEY!)
+
 export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget): Promise<ResumeEnhancementResult> {
   try {
     // Convert resume data to a string format for the AI
@@ -12,7 +15,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
 
     // Generate enhanced resume using Groq
     const { text } = await generateText({
-      model: groq("llama3-70b-8192"),
+      model: groqClient("deepseek-r1-distill-llama-70b"),
       prompt: `
         You are an expert resume writer and career coach. Your task is to enhance the following resume to make it more effective for the target job.
         
@@ -63,7 +66,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
 
       // If we still can't parse the JSON, make a second attempt with a more direct prompt
       const { text: retryText } = await generateText({
-        model: groq("llama3-70b-8192"),
+        model: groqClient("deepseek-r1-distill-llama-70b"),
         prompt: `
           Convert the following resume data to an enhanced version for the target job.
           
@@ -120,7 +123,7 @@ export async function scoreResume(
 
     // Generate score and feedback using Groq
     const { text } = await generateText({
-      model: groq("llama3-70b-8192"),
+      model: groqClient("deepseek-r1-distill-llama-70b"),
       prompt: `
         You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the target job and provide detailed feedback.
         
@@ -191,7 +194,7 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
 
     // Generate parsed resume using Groq with a more concise prompt
     const { text } = await generateText({
-      model: groq("llama3-70b-8192"),
+      model: groqClient("deepseek-r1-distill-llama-70b"),
       prompt: `
         Extract structured information from this resume text and format it as JSON.
         

@@ -7,15 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Download, Printer, AlertCircle, CheckCircle2 } from "lucide-react"
 import type { ResumeData, JobTarget } from "@/types/resume"
 import { useRef } from "react"
+import ATSResumePreview from "@/components/ats-resume-preview"
 
 interface ResumePreviewProps {
   resumeData: ResumeData
   feedback: string
   score: number | null
   jobTarget: JobTarget
+  atsFeedback?: {
+    formatting: string[]
+    keywords: string[]
+    structure: string[]
+    compatibility: number
+  }
 }
 
-export default function ResumePreview({ resumeData, feedback, score, jobTarget }: ResumePreviewProps) {
+export default function ResumePreview({ resumeData, feedback, score, jobTarget, atsFeedback }: ResumePreviewProps) {
   const resumeRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
@@ -378,6 +385,15 @@ export default function ResumePreview({ resumeData, feedback, score, jobTarget }
             <AlertTitle>{score && score >= 70 ? "Good Match" : "Needs Improvement"}</AlertTitle>
             <AlertDescription className="mt-2 text-sm whitespace-pre-line">{feedback}</AlertDescription>
           </Alert>
+
+          {atsFeedback && (
+            <ATSResumePreview
+              resumeData={resumeData}
+              atsScore={score || 0}
+              keywords={atsFeedback.keywords || []}
+              feedback={atsFeedback}
+            />
+          )}
         </div>
       </div>
     </div>

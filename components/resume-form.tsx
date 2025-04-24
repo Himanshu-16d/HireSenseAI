@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Plus, Trash2 } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
+import RealtimeFeedback from "@/components/realtime-feedback"
 
 interface ResumeFormProps {
   resumeData: ResumeData
@@ -328,6 +329,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                 />
               </div>
             </div>
+            <RealtimeFeedback resumeData={resumeData} section="personal-info" />
           </AccordionContent>
         </AccordionItem>
 
@@ -346,6 +348,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                 rows={4}
               />
             </div>
+            <RealtimeFeedback resumeData={resumeData} section="summary" />
           </AccordionContent>
         </AccordionItem>
 
@@ -480,6 +483,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
               <Plus className="h-4 w-4 mr-2" />
               Add Work Experience
             </Button>
+            <RealtimeFeedback resumeData={resumeData} section="experience" />
           </AccordionContent>
         </AccordionItem>
 
@@ -602,6 +606,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
               <Plus className="h-4 w-4 mr-2" />
               Add Education
             </Button>
+            <RealtimeFeedback resumeData={resumeData} section="education" />
           </AccordionContent>
         </AccordionItem>
 
@@ -632,6 +637,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                 Add Skill
               </Button>
             </div>
+            <RealtimeFeedback resumeData={resumeData} section="skills" />
           </AccordionContent>
         </AccordionItem>
 
@@ -722,6 +728,7 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
               <Plus className="h-4 w-4 mr-2" />
               Add Project
             </Button>
+            <RealtimeFeedback resumeData={resumeData} section="projects" />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

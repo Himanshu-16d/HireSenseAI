@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ResumeForm from "@/components/resume-form"
 import ResumePreview from "@/components/resume-preview"
 import JobTargeting from "@/components/job-targeting"
-import type { ResumeData, JobTarget } from "@/types/resume"
+import CoverLetterGenerator from "@/components/cover-letter-generator"
+import type { ResumeData, JobTarget, JobDescription } from "@/types/resume"
 import { enhanceResume } from "@/actions/resume-actions"
 import { Loader2 } from "lucide-react"
 
@@ -60,6 +61,15 @@ export default function ResumeBuilder() {
     industry: "",
   })
 
+  const [jobDescription, setJobDescription] = useState<JobDescription>({
+    title: "",
+    company: "",
+    description: "",
+    requirements: [],
+    responsibilities: [],
+    qualifications: [],
+  })
+
   const [enhancedResume, setEnhancedResume] = useState<ResumeData | null>(null)
   const [feedback, setFeedback] = useState<string>("")
   const [score, setScore] = useState<number | null>(null)
@@ -72,6 +82,14 @@ export default function ResumeBuilder() {
 
   const handleJobTargetChange = (newTarget: JobTarget) => {
     setJobTarget(newTarget)
+    setJobDescription({
+      title: newTarget.title,
+      company: newTarget.company,
+      description: newTarget.description,
+      requirements: [],
+      responsibilities: [],
+      qualifications: [],
+    })
   }
 
   const handleEnhanceResume = async () => {
@@ -84,10 +102,8 @@ export default function ResumeBuilder() {
       setActiveTab("preview")
     } catch (error) {
       console.error("Error enhancing resume:", error)
-      // Show error in the UI
       setFeedback("We encountered an error while enhancing your resume. Please try again later.")
       setScore(0)
-      // Still show preview with original resume
       setEnhancedResume(resumeData)
       setActiveTab("preview")
     } finally {
@@ -98,18 +114,19 @@ export default function ResumeBuilder() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="edit">Edit Resume</TabsTrigger>
           <TabsTrigger value="preview" disabled={!enhancedResume}>
             Preview
+          </TabsTrigger>
+          <TabsTrigger value="cover-letter" disabled={!enhancedResume}>
+            Cover Letter
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="edit" className="space-y-6">
           <JobTargeting jobTarget={jobTarget} onChange={handleJobTargetChange} />
-
           <ResumeForm resumeData={resumeData} onChange={handleResumeChange} />
-
           <div className="flex justify-end">
             <Button onClick={handleEnhanceResume} disabled={isLoading} size="lg">
               {isLoading ? (
@@ -128,6 +145,10 @@ export default function ResumeBuilder() {
           {enhancedResume && (
             <ResumePreview resumeData={enhancedResume} feedback={feedback} score={score} jobTarget={jobTarget} />
           )}
+        </TabsContent>
+
+        <TabsContent value="cover-letter">
+          {enhancedResume && <CoverLetterGenerator resumeData={enhancedResume} jobDescription={jobDescription} />}
         </TabsContent>
       </Tabs>
     </div>

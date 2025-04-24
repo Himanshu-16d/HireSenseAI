@@ -4,6 +4,9 @@ import { generateText } from "ai"
 import { groq } from "@ai-sdk/groq"
 import type { JobListing, JobSearchParams, ResumeData } from "@/types/resume"
 
+// Initialize Groq client with API key
+const groqClient = groq(process.env.GROQ_API_KEY!)
+
 export async function findJobs(searchParams: JobSearchParams, resumeData: ResumeData | null): Promise<JobListing[]> {
   try {
     // Convert search params and resume data to string format for the AI
@@ -12,7 +15,7 @@ export async function findJobs(searchParams: JobSearchParams, resumeData: Resume
 
     // Generate job listings using Groq
     const { text } = await generateText({
-      model: groq("llama3-70b-8192"),
+      model: groqClient("deepseek-r1-distill-llama-70b"),
       prompt: `
         You are an AI job search assistant. Your task is to generate realistic job listings based on the search parameters and resume data provided.
         
@@ -149,13 +152,4 @@ function getMockJobListings(): JobListing[] {
       source: "indeed",
     },
   ]
-}
-
-export async function connectLinkedIn(): Promise<{ success: boolean; message: string }> {
-  // This would normally connect to LinkedIn's API
-  // For now, we'll just simulate a successful connection
-  return {
-    success: true,
-    message: "Successfully connected to LinkedIn",
-  }
 }

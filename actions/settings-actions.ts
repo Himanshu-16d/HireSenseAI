@@ -1,5 +1,6 @@
 "use server"
 
+import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/db"
 
 export async function updateAccountInfo(data: {
@@ -7,14 +8,42 @@ export async function updateAccountInfo(data: {
   email: string
 }) {
   try {
-    // In a real app, you'd get the user ID from the session
+    const session = await getServerSession()
+    
+    if (!session?.user?.id) {
+      return { success: false, message: "You must be logged in to update your account" }
+    }
+
+    const userId = session.user.id
+
+    // First check if the new email is already taken by another user
+    if (data.email !== session.user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: data.email }
+      })
+      
+      if (existingUser && existingUser.id !== userId) {
+        return { success: false, message: "This email is already in use" }
+      }
+    }
+
+    // Update the user record
     const user = await prisma.user.update({
-      where: { email: data.email },
+      where: { id: userId },
       data: {
         name: data.name,
+        email: data.email,
       },
     })
-    return { success: true, message: "Account information updated successfully" }
+
+    return { 
+      success: true, 
+      message: "Account information updated successfully",
+      user: {
+        name: user.name,
+        email: user.email
+      }
+    }
   } catch (error) {
     console.error("Error updating account info:", error)
     return { success: false, message: "Failed to update account information" }

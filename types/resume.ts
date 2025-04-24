@@ -55,7 +55,37 @@ export interface ResumeEnhancementResult {
   score: number
 }
 
-// Job-related types
+export interface ResumeAnalysis {
+  score: number
+  strengths: string[]
+  improvements: string[]
+  keywords: string[]
+  recommendations: string[]
+}
+
+export interface JobMatch {
+  matchScore: number
+  matchingSkills: string[]
+  missingSkills: string[]
+  experienceAlignment: string
+  suggestedModifications: string[]
+}
+
+export interface CoverLetter {
+  coverLetter: string
+  highlights: string[]
+  keywords: string[]
+}
+
+export interface JobDescription {
+  title: string
+  company: string
+  description: string
+  requirements: string[]
+  responsibilities: string[]
+  qualifications: string[]
+}
+
 export interface JobListing {
   id: string
   title: string

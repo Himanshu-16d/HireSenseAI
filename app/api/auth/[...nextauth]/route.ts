@@ -1,55 +1,48 @@
-import { NextAuthOptions } from "next-auth"
-import NextAuth from "next-auth/next"
-import LinkedInProvider from "next-auth/providers/linkedin"
+import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import bcrypt from "bcrypt"
 import { prisma } from "@/lib/db"
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+const handler = NextAuth({
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file'
-        }
-      }
-    }),
-    LinkedInProvider({
-      clientId: process.env.LINKEDIN_CLIENT_ID!,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: "r_emailaddress r_liteprofile r_basicprofile w_member_social"
-        }
-      },
-      profile(profile) {
-        return {
-          id: profile.id,
-          name: profile.localizedFirstName + " " + profile.localizedLastName,
-          email: profile.emailAddress,
-          image: profile.profilePicture?.["displayImage~"]?.elements?.[0]?.identifiers?.[0]?.identifier || null,
-        }
-      },
-    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
-        
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
         try {
+          // Find user by email
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email }
+            where: { email: credentials.email },
+            include: {
+              accounts: {
+                where: {
+                  provider: "credentials"
+                }
+              }
+            }
           })
 
-          if (!user) return null
+          if (!user || !user.accounts[0]?.password) {
+            return null
+          }
+
+          // Compare password
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.accounts[0].password
+          )
+
+          if (!isValid) {
+            return null
+          }
 
           return {
             id: user.id,
@@ -57,34 +50,28 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
           }
         } catch (error) {
-          console.error("Error in authorize callback:", error)
+          console.error("Auth error:", error)
           return null
         }
-      }
-    })
+      },
+    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
-  callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id
-      }
-      return session
-    },
-    async jwt({ token, account, profile }) {
-      if (account) {
-        token.accessToken = account.access_token
-      }
-      if (profile) {
-        token.profile = profile
-      }
-      return token
-    }
-  },
   pages: {
-    signIn: '/login',
-    error: '/auth/error',
-  }
-}
+    signIn: "/login",
+    error: "/auth/error",
+  },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }
