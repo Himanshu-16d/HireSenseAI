@@ -41,3 +41,6 @@ next-env.d.ts
 
 # Google Cloud credentials
 hackhazards25-09954bb303eb.json
+
+# Environment variables
+.env
