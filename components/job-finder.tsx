@@ -7,37 +7,58 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Search, Linkedin, FileText, Upload } from "lucide-react"
-import { findJobs, connectLinkedIn } from "@/actions/job-actions"
+import { Loader2, Search, FileText, Upload, Clock, ExternalLink } from "lucide-react"
+import { findJobs } from "@/actions/job-actions"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { JobListing, JobSearchParams, ResumeData, LinkedInProfile } from "@/types/resume"
+import type { Job, JobSearchParams, ResumeData } from "@/types/job"
 import JobListingCard from "@/components/job-listing-card"
 import ResumeUpload from "@/components/resume-upload"
-import LinkedInIntegration from "@/components/linkedin-integration"
-import { importLinkedInProfile, getJobRecommendations } from "@/actions/linkedin-actions"
+import { LocationSearch } from "@/components/ui/location-search"
+import { useToast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+import { AlertCircle } from "lucide-react"
+
+interface RecentSearch {
+  skills: string[]
+  location: string
+  title: string
+  timestamp: number
+}
 
 export default function JobFinder() {
   const [searchParams, setSearchParams] = useState<JobSearchParams>({
     title: "",
     location: "",
-    keywords: "",
-    remote: false,
-    useResume: true,
+    keywords: ""
   })
-  const [resumeData, setResumeData] = useState<ResumeData | null>(null)
-  const [jobListings, setJobListings] = useState<JobListing[]>([])
+  const [resumeData, setResumeData] = useState<ResumeData>({
+    skills: [],
+    experience: [
+      {
+        title: "",
+        company: "",
+        duration: "",
+        description: ""
+      }
+    ],
+    education: [
+      {
+        degree: "",
+        institution: "",
+        year: ""
+      }
+    ]
+  })
+  const [jobListings, setJobListings] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isLinkedInConnected, setIsLinkedInConnected] = useState(false)
   const [activeTab, setActiveTab] = useState("search")
   const [resumeEntryMethod, setResumeEntryMethod] = useState<"upload" | "manual">("upload")
-  const [linkedInProfile, setLinkedInProfile] = useState<LinkedInProfile | null>(null)
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([])
+  const [locationWarning, setLocationWarning] = useState<string | null>(null)
+  const { toast } = useToast();
 
-  const handleSearchParamChange = (key: keyof JobSearchParams, value: string | boolean) => {
+  const handleSearchParamChange = (key: keyof JobSearchParams, value: string) => {
     setSearchParams((prev) => ({
       ...prev,
       [key]: value,
@@ -49,127 +70,77 @@ export default function JobFinder() {
   }
 
   const handleManualResumeChange = (field: string, value: string) => {
-    if (!resumeData) {
-      setResumeData({
-        personalInfo: {
-          name: "",
-          email: "",
-          phone: "",
-          location: "",
-          linkedin: "",
-          website: "",
-        },
-        summary: "",
-        experience: [
-          {
-            title: "",
-            company: "",
-            location: "",
-            startDate: "",
-            endDate: "",
-            description: "",
-            achievements: [""],
-          },
-        ],
-        education: [
-          {
-            degree: "",
-            institution: "",
-            location: "",
-            graduationDate: "",
-            gpa: "",
-            achievements: [""],
-          },
-        ],
-        skills: [""],
-        projects: [
-          {
-            name: "",
-            description: "",
-            technologies: [""],
-            link: "",
-          },
-        ],
-      })
-      return
-    }
-
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".")
-      setResumeData({
-        ...resumeData,
-        personalInfo: {
-          ...resumeData.personalInfo,
-          [child]: value,
-        },
-      })
-    } else if (field === "skills") {
-      setResumeData({
-        ...resumeData,
+    if (field === "skills") {
+      setResumeData((prev) => ({
+        ...prev,
         skills: value.split(",").map((skill) => skill.trim()),
-      })
-    } else {
-      setResumeData({
-        ...resumeData,
-        [field]: value,
-      })
+      }))
+    } else if (field.startsWith("experience")) {
+      const [_, index, prop] = field.split(".")
+      setResumeData((prev) => ({
+        ...prev,
+        experience: prev.experience.map((exp, i) => 
+          i === parseInt(index) ? { ...exp, [prop]: value } : exp
+        ),
+      }))
+    } else if (field.startsWith("education")) {
+      const [_, index, prop] = field.split(".")
+      setResumeData((prev) => ({
+        ...prev,
+        education: prev.education.map((edu, i) => 
+          i === parseInt(index) ? { ...edu, [prop]: value } : edu
+        ),
+      }))
     }
   }
 
   const handleSearch = async () => {
-    setIsLoading(true)
+    console.log('Starting job search...');
+    setIsLoading(true);
+    setLocationWarning(null);
+    
     try {
-      const results = await findJobs(searchParams, resumeData)
-      setJobListings(results || [])
-      setActiveTab("results")
-    } catch (error) {
-      console.error("Error finding jobs:", error)
-      setJobListings([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleConnectLinkedIn = async () => {
-    try {
-      const result = await connectLinkedIn()
-      if (result.success) {
-        setIsLinkedInConnected(true)
-      }
-    } catch (error) {
-      console.error("Error connecting to LinkedIn:", error)
-    }
-  }
-
-  const handleLinkedInProfile = async (profile: LinkedInProfile) => {
-    try {
-      const result = await importLinkedInProfile(profile)
-      if (result.success) {
-        setLinkedInProfile(profile)
-        const recommendations = await getJobRecommendations(profile.id)
-        if (recommendations.success) {
-          setJobListings(recommendations.jobs)
-          setActiveTab("results")
+      console.log('Calling findJobs with params:', searchParams);
+      const results = await findJobs(searchParams, resumeData);
+      console.log('Received results:', results);
+      
+      if (Array.isArray(results)) {
+        setJobListings(results);
+        if (results.length > 0) {
+          setActiveTab("results");
         }
+      } else {
+        console.error('Results is not an array:', results);
+        setJobListings([]);
       }
     } catch (error) {
-      console.error("Error handling LinkedIn profile:", error)
+      console.error("Error finding jobs:", error);
+      setJobListings([]);
+      toast({
+        title: "Error",
+        description: "There was a problem finding jobs. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      console.log('Search completed, setting loading to false');
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="search">Search</TabsTrigger>
-          <TabsTrigger value="results" disabled={jobListings.length === 0}>
-            Results
-          </TabsTrigger>
-        </TabsList>
+    <div className="container mx-auto py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="results" disabled={jobListings.length === 0}>
+                Results
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="search" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
+            <TabsContent value="search" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Job Search</CardTitle>
@@ -188,11 +159,10 @@ export default function JobFinder() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        placeholder="New York, Remote, etc."
+                      <LocationSearch
                         value={searchParams.location}
-                        onChange={(e) => handleSearchParamChange("location", e.target.value)}
+                        onChange={(value) => handleSearchParamChange("location", value)}
+                        placeholder="Search for a location"
                       />
                     </div>
                   </div>
@@ -205,29 +175,9 @@ export default function JobFinder() {
                       onChange={(e) => handleSearchParamChange("keywords", e.target.value)}
                     />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remote"
-                      checked={searchParams.remote}
-                      onCheckedChange={(checked) => handleSearchParamChange("remote", !!checked)}
-                    />
-                    <Label htmlFor="remote">Remote only</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="use-resume"
-                      checked={searchParams.useResume}
-                      onCheckedChange={(checked) => handleSearchParamChange("useResume", !!checked)}
-                    />
-                    <Label htmlFor="use-resume">Use my resume to find matching jobs</Label>
-                  </div>
                 </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={handleConnectLinkedIn} disabled={isLinkedInConnected}>
-                    <Linkedin className="mr-2 h-4 w-4" />
-                    {isLinkedInConnected ? "LinkedIn Connected" : "Connect LinkedIn"}
-                  </Button>
-                  <Button onClick={handleSearch} disabled={isLoading}>
+                <CardFooter>
+                  <Button onClick={handleSearch} disabled={isLoading} className="w-full">
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -242,9 +192,7 @@ export default function JobFinder() {
                   </Button>
                 </CardFooter>
               </Card>
-            </div>
 
-            <div>
               <Card>
                 <CardHeader>
                   <CardTitle>Resume</CardTitle>
@@ -281,16 +229,6 @@ export default function JobFinder() {
                             onChange={(e) => handleManualResumeChange("skills", e.target.value)}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="summary">Professional Summary</Label>
-                          <Textarea
-                            id="summary"
-                            placeholder="Brief overview of your experience and expertise"
-                            value={resumeData?.summary || ""}
-                            onChange={(e) => handleManualResumeChange("summary", e.target.value)}
-                            rows={3}
-                          />
-                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-2">
                             <Label htmlFor="job-title">Current/Recent Job Title</Label>
@@ -298,7 +236,7 @@ export default function JobFinder() {
                               id="job-title"
                               placeholder="Software Engineer"
                               value={resumeData?.experience?.[0]?.title || ""}
-                              onChange={(e) => handleManualResumeChange("experience[0].title", e.target.value)}
+                              onChange={(e) => handleManualResumeChange("experience.0.title", e.target.value)}
                             />
                           </div>
                           <div className="space-y-2">
@@ -307,7 +245,7 @@ export default function JobFinder() {
                               id="company"
                               placeholder="Acme Inc."
                               value={resumeData?.experience?.[0]?.company || ""}
-                              onChange={(e) => handleManualResumeChange("experience[0].company", e.target.value)}
+                              onChange={(e) => handleManualResumeChange("experience.0.company", e.target.value)}
                             />
                           </div>
                         </div>
@@ -316,88 +254,111 @@ export default function JobFinder() {
                   </Tabs>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="results">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Job Results</CardTitle>
-                  <CardDescription>Found {jobListings.length} jobs matching your criteria</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[600px] pr-4">
-                    <div className="space-y-4">
-                      {jobListings.map((job) => (
-                        <JobListingCard key={job.id} job={job} />
+            <TabsContent value="results" className="space-y-6">
+              {locationWarning && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+                  {locationWarning}
+                </div>
+              )}
+              {isLoading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-[450px] w-full rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : jobListings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No jobs found</h3>
+                  <p className="text-muted-foreground mb-4 text-center max-w-md">
+                    We couldn't find any jobs matching your criteria.<br />
+                    Try adjusting your search or check back later!
+                  </p>
+                  <img src="/empty-state.svg" alt="No jobs" className="w-40 h-40 opacity-70" />
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold">Found {jobListings.length} jobs</h2>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        <Clock className="h-4 w-4 mr-1.5" />
+                        Save All
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <ExternalLink className="h-4 w-4 mr-1.5" />
+                        Export
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {jobListings.map((job) => (
+                      <div key={job.id} className="transition-all duration-200 hover:scale-[1.02]">
+                        <JobListingCard job={job} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resume Score</CardTitle>
+              <CardDescription>AI-powered analysis</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-32 h-32 rounded-full border-8 border-primary/20 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-primary">92%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                Your resume matches well with the job requirements
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Searches</CardTitle>
+              <CardDescription>Your recent job searches</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                {recentSearches.map((search, index) => (
+                  <div key={index} className="mb-4 p-4 border rounded-lg">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {search.skills.map((skill, i) => (
+                        <Badge key={i} variant="secondary">
+                          {skill}
+                        </Badge>
                       ))}
                     </div>
-                  </ScrollArea>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" onClick={() => setActiveTab("search")} className="w-full">
-                    Refine Search
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Job Match Analysis</CardTitle>
-                  <CardDescription>AI-powered insights</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Skills Match</span>
-                      <span className="text-sm font-medium">75%</span>
-                    </div>
-                    <Progress value={75} className="h-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Location: {search.location}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Title: {search.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(search.timestamp).toLocaleString()}
+                    </p>
                   </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Experience Match</span>
-                      <span className="text-sm font-medium">82%</span>
-                    </div>
-                    <Progress value={82} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Education Match</span>
-                      <span className="text-sm font-medium">90%</span>
-                    </div>
-                    <Progress value={90} className="h-2" />
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-medium mb-2">Top Missing Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">Docker</Badge>
-                      <Badge variant="outline">Kubernetes</Badge>
-                      <Badge variant="outline">AWS</Badge>
-                      <Badge variant="outline">GraphQL</Badge>
-                    </div>
-                  </div>
-
-                  <Alert>
-                    <AlertDescription>
-                      Based on your resume, consider highlighting your experience with React and Node.js when applying
-                      to these positions.
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

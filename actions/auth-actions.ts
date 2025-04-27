@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import bcrypt from "bcrypt"
+import bcryptjs from "bcryptjs"
 
 export async function registerUser(data: {
   firstName: string
@@ -20,7 +20,7 @@ export async function registerUser(data: {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(data.password, 10)
+    const hashedPassword = await bcryptjs.hash(data.password, 10)
 
     // Create user and credentials account in a transaction
     const result = await prisma.$transaction(async (tx) => {

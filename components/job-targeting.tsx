@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { JobTarget } from "@/types/resume"
+import { Loader2, Sparkles } from "lucide-react"
+import { generateFieldContent } from "@/actions/generate-field-content"
 
 interface JobTargetingProps {
   jobTarget: JobTarget
@@ -11,11 +15,27 @@ interface JobTargetingProps {
 }
 
 export default function JobTargeting({ jobTarget, onChange }: JobTargetingProps) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
   const updateField = (field: keyof JobTarget, value: string) => {
     onChange({
       ...jobTarget,
       [field]: value,
     })
+  }
+
+  const handleGenerateJobDescription = async () => {
+    setLoading(true)
+    setError(false)
+    try {
+      const aiDesc = await generateFieldContent({ field: "jobDescription", jobTarget })
+      updateField("description", aiDesc)
+    } catch (e) {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -64,13 +84,25 @@ export default function JobTargeting({ jobTarget, onChange }: JobTargetingProps)
           <label htmlFor="job-description" className="text-sm font-medium">
             Job Description
           </label>
-          <Textarea
-            id="job-description"
-            value={jobTarget.description}
-            onChange={(e) => updateField("description", e.target.value)}
-            placeholder="Paste the job description here or describe the key requirements..."
-            rows={5}
-          />
+          <div className="flex gap-2 items-center">
+            <Textarea
+              id="job-description"
+              value={jobTarget.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="Paste the job description here or describe the key requirements..."
+              rows={5}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleGenerateJobDescription}
+              disabled={loading}
+              title="Generate with AI"
+            >
+              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+            </Button>
+          </div>
+          {error && <div className="text-red-500 text-xs">Failed to generate job description. Try again.</div>}
         </div>
       </CardContent>
     </Card>

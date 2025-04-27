@@ -1,18 +1,89 @@
-import { groq } from "@ai-sdk/groq"
-
+console.log("DEBUG: GROQ_API_KEY =", process.env.GROQ_API_KEY);
 if (!process.env.GROQ_API_KEY) {
   throw new Error("GROQ_API_KEY is not defined in environment variables")
 }
 
-// Initialize Groq client with API key
-export const groqClient = groq(process.env.GROQ_API_KEY)
-
 // Model configuration
 export const MODELS = {
-  RESUME_ANALYSIS: "llama2-70b-4096",
-  JOB_MATCHING: "llama2-70b-4096",
-  COVER_LETTER: "llama2-70b-4096",
+  RESUME_ANALYSIS: "deepseek-r1-distill-llama-70b",
+  JOB_MATCHING: "deepseek-r1-distill-llama-70b",
+  COVER_LETTER: "deepseek-r1-distill-llama-70b",
+  SKILL_ANALYSIS: "deepseek-r1-distill-llama-70b",
+  REALTIME_MATCHING: "deepseek-r1-distill-llama-70b"
 } as const
+
+// Function to make Groq API calls
+export async function callGroqAPI(messages: { role: string; content: string }[], model: string) {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        temperature: 0.7,
+        max_tokens: 2048,
+        stream: false
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(`Groq API error: ${response.statusText}${errorData ? ` - ${JSON.stringify(errorData)}` : ''}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Groq API call failed:", error);
+    throw error;
+  }
+}
+
+// Real-time analysis function
+export async function analyzeResumeRealtime(resumeData: any, jobDescription?: string) {
+  const prompt = `
+Analyze this resume in real-time and provide instant feedback:
+
+RESUME:
+${JSON.stringify(resumeData)}
+
+${jobDescription ? `JOB DESCRIPTION:\n${jobDescription}\n` : ''}
+
+Provide:
+1. Instant skill match analysis
+2. Real-time improvement suggestions
+3. ATS compatibility score
+4. Keyword optimization recommendations
+
+Return as JSON with the following structure:
+{
+  "skillMatch": number,
+  "suggestions": string[],
+  "atsScore": number,
+  "keywords": string[],
+  "instantFeedback": string
+}
+`
+
+  const response = await callGroqAPI([
+    {
+      role: "system",
+      content: "You are a real-time resume analysis expert providing instant feedback."
+    },
+    {
+      role: "user",
+      content: prompt
+    }
+  ], MODELS.REALTIME_MATCHING);
+
+  return JSON.parse(response.choices[0]?.message?.content || "{}");
+}
 
 // Utility function for parallel processing
 export async function processInParallel<T>(

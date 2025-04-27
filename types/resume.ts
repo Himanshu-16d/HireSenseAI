@@ -98,6 +98,8 @@ export interface JobListing {
   skills: string[]
   matchScore: number
   source: "linkedin" | "indeed" | "other"
+  commuteTime: number // in minutes
+  distance: number // in miles
 }
 
 export interface JobSearchParams {
@@ -106,6 +108,7 @@ export interface JobSearchParams {
   keywords: string
   remote: boolean
   useResume: boolean
+  locationType: "any" | "remote" | "hybrid" | "onsite"
 }
 
 export interface LinkedInProfile {

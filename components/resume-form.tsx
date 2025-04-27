@@ -1,12 +1,18 @@
 "use client"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Loader2, Sparkles } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
 import RealtimeFeedback from "@/components/realtime-feedback"
+import { DayPicker } from "react-day-picker"
+import { format } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { generateFieldContent } from "@/actions/generate-field-content"
 
 interface ResumeFormProps {
   resumeData: ResumeData
@@ -14,6 +20,27 @@ interface ResumeFormProps {
 }
 
 export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
+  const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(new Date())
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(new Date())
+  const [loadingField, setLoadingField] = useState<string | null>(null)
+  const [errorField, setErrorField] = useState<string | null>(null)
+
+  const handleStartDateSelect = (date: Date | undefined, index: number) => {
+    setSelectedStartDate(date)
+    if (date) {
+      const formattedDate = format(date, "MMMM yyyy")
+      updateExperience(index, "startDate", formattedDate)
+    }
+  }
+
+  const handleEndDateSelect = (date: Date | undefined, index: number) => {
+    setSelectedEndDate(date)
+    if (date) {
+      const formattedDate = format(date, "MMMM yyyy")
+      updateExperience(index, "endDate", formattedDate)
+    }
+  }
+
   const updatePersonalInfo = (field: string, value: string) => {
     onChange({
       ...resumeData,
@@ -254,6 +281,46 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
     })
   }
 
+  // Handler for AI generation
+  const handleGenerateSummary = async () => {
+    setLoadingField("summary")
+    setErrorField(null)
+    try {
+      const aiSummary = await generateFieldContent({ field: "summary", resumeData })
+      updateSummary(aiSummary)
+    } catch (e) {
+      setErrorField("summary")
+    } finally {
+      setLoadingField(null)
+    }
+  }
+
+  const handleGenerateExperience = async (index: number) => {
+    setLoadingField(`experience-${index}`)
+    setErrorField(null)
+    try {
+      const aiDesc = await generateFieldContent({ field: "experience", experience: resumeData.experience[index] })
+      updateExperience(index, "description", aiDesc)
+    } catch (e) {
+      setErrorField(`experience-${index}`)
+    } finally {
+      setLoadingField(null)
+    }
+  }
+
+  const handleGenerateProject = async (index: number) => {
+    setLoadingField(`project-${index}`)
+    setErrorField(null)
+    try {
+      const aiDesc = await generateFieldContent({ field: "project", project: resumeData.projects[index] })
+      updateProject(index, "description", aiDesc)
+    } catch (e) {
+      setErrorField(`project-${index}`)
+    } finally {
+      setLoadingField(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Accordion type="single" collapsible defaultValue="personal-info">
@@ -340,13 +407,25 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
               <label htmlFor="summary" className="text-sm font-medium">
                 Summary
               </label>
-              <Textarea
-                id="summary"
-                value={resumeData.summary}
-                onChange={(e) => updateSummary(e.target.value)}
-                placeholder="Experienced software engineer with a passion for building scalable applications..."
-                rows={4}
-              />
+              <div className="flex gap-2 items-center">
+                <Textarea
+                  id="summary"
+                  value={resumeData.summary}
+                  onChange={(e) => updateSummary(e.target.value)}
+                  placeholder="Experienced software engineer with a passion for building scalable applications..."
+                  rows={4}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleGenerateSummary}
+                  disabled={loadingField === "summary"}
+                  title="Generate with AI"
+                >
+                  {loadingField === "summary" ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                </Button>
+              </div>
+              {errorField === "summary" && <div className="text-red-500 text-xs">Failed to generate summary. Try again.</div>}
             </div>
             <RealtimeFeedback resumeData={resumeData} section="summary" />
           </AccordionContent>
@@ -412,23 +491,131 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                         <label htmlFor={`exp-start-${index}`} className="text-sm font-medium">
                           Start Date
                         </label>
-                        <Input
-                          id={`exp-start-${index}`}
-                          value={exp.startDate}
-                          onChange={(e) => updateExperience(index, "startDate", e.target.value)}
-                          placeholder="Jan 2020"
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !selectedStartDate && "text-muted-foreground"
+                              )}
+                            >
+                              {selectedStartDate ? (
+                                format(selectedStartDate, "MMMM yyyy")
+                              ) : (
+                                <span>Select Month and Year</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <div className="p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <select
+                                  className="h-9 w-[140px] rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                  value={selectedStartDate ? format(selectedStartDate, "MM") : ""}
+                                  onChange={(e) => {
+                                    const month = parseInt(e.target.value)
+                                    const newDate = selectedStartDate || new Date()
+                                    newDate.setMonth(month - 1)
+                                    handleStartDateSelect(newDate, index)
+                                  }}
+                                >
+                                  <option value="">Month</option>
+                                  {Array.from({ length: 12 }, (_, i) => (
+                                    <option key={i + 1} value={String(i + 1).padStart(2, "0")}>
+                                      {format(new Date(2000, i), "MMM")}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="h-9 w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                  value={selectedStartDate ? format(selectedStartDate, "yyyy") : ""}
+                                  onChange={(e) => {
+                                    const year = parseInt(e.target.value)
+                                    const newDate = selectedStartDate || new Date()
+                                    newDate.setFullYear(year)
+                                    handleStartDateSelect(newDate, index)
+                                  }}
+                                >
+                                  <option value="">Year</option>
+                                  {Array.from({ length: 25 }, (_, i) => {
+                                    const year = new Date().getFullYear() - i
+                                    return (
+                                      <option key={year} value={year}>
+                                        {year}
+                                      </option>
+                                    )
+                                  })}
+                                </select>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="space-y-2">
                         <label htmlFor={`exp-end-${index}`} className="text-sm font-medium">
                           End Date
                         </label>
-                        <Input
-                          id={`exp-end-${index}`}
-                          value={exp.endDate}
-                          onChange={(e) => updateExperience(index, "endDate", e.target.value)}
-                          placeholder="Present"
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !selectedEndDate && "text-muted-foreground"
+                              )}
+                            >
+                              {selectedEndDate ? (
+                                format(selectedEndDate, "MMMM yyyy")
+                              ) : (
+                                <span>Select Month and Year</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <div className="p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <select
+                                  className="h-9 w-[140px] rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                  value={selectedEndDate ? format(selectedEndDate, "MM") : ""}
+                                  onChange={(e) => {
+                                    const month = parseInt(e.target.value)
+                                    const newDate = selectedEndDate || new Date()
+                                    newDate.setMonth(month - 1)
+                                    handleEndDateSelect(newDate, index)
+                                  }}
+                                >
+                                  <option value="">Month</option>
+                                  {Array.from({ length: 12 }, (_, i) => (
+                                    <option key={i + 1} value={String(i + 1).padStart(2, "0")}>
+                                      {format(new Date(2000, i), "MMM")}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="h-9 w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                  value={selectedEndDate ? format(selectedEndDate, "yyyy") : ""}
+                                  onChange={(e) => {
+                                    const year = parseInt(e.target.value)
+                                    const newDate = selectedEndDate || new Date()
+                                    newDate.setFullYear(year)
+                                    handleEndDateSelect(newDate, index)
+                                  }}
+                                >
+                                  <option value="">Year</option>
+                                  {Array.from({ length: 25 }, (_, i) => {
+                                    const year = new Date().getFullYear() - i
+                                    return (
+                                      <option key={year} value={year}>
+                                        {year}
+                                      </option>
+                                    )
+                                  })}
+                                </select>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </div>
@@ -436,13 +623,25 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                     <label htmlFor={`exp-desc-${index}`} className="text-sm font-medium">
                       Description
                     </label>
-                    <Textarea
-                      id={`exp-desc-${index}`}
-                      value={exp.description}
-                      onChange={(e) => updateExperience(index, "description", e.target.value)}
-                      placeholder="Briefly describe your role and responsibilities..."
-                      rows={3}
-                    />
+                    <div className="flex gap-2 items-center">
+                      <Textarea
+                        id={`exp-desc-${index}`}
+                        value={exp.description}
+                        onChange={(e) => updateExperience(index, "description", e.target.value)}
+                        placeholder="Describe your role, achievements, and impact..."
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => handleGenerateExperience(index)}
+                        disabled={loadingField === `experience-${index}`}
+                        title="Generate with AI"
+                      >
+                        {loadingField === `experience-${index}` ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {errorField === `experience-${index}` && <div className="text-red-500 text-xs">Failed to generate experience description. Try again.</div>}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -686,13 +885,25 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                     <label htmlFor={`project-desc-${index}`} className="text-sm font-medium">
                       Description
                     </label>
-                    <Textarea
-                      id={`project-desc-${index}`}
-                      value={project.description}
-                      onChange={(e) => updateProject(index, "description", e.target.value)}
-                      placeholder="Describe the project, your role, and key features..."
-                      rows={3}
-                    />
+                    <div className="flex gap-2 items-center">
+                      <Textarea
+                        id={`project-desc-${index}`}
+                        value={project.description}
+                        onChange={(e) => updateProject(index, "description", e.target.value)}
+                        placeholder="Describe the project, your role, and key features..."
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => handleGenerateProject(index)}
+                        disabled={loadingField === `project-${index}`}
+                        title="Generate with AI"
+                      >
+                        {loadingField === `project-${index}` ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {errorField === `project-${index}` && <div className="text-red-500 text-xs">Failed to generate project description. Try again.</div>}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">

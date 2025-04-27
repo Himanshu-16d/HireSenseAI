@@ -1,6 +1,7 @@
 "use client"
 
-import type React from "react"
+import React from "react"
+import type { ReactNode } from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -23,7 +24,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 export default function DashboardNav() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const { theme } = useTheme()
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const navItems = [
     {
@@ -40,6 +46,11 @@ export default function DashboardNav() {
       name: "Job Finder",
       href: "/job-finder",
       icon: <Briefcase className="h-5 w-5" />,
+    },
+    {
+      title: "Job Description Generator",
+      href: "/job-description",
+      icon: <FileText className="h-5 w-5" />,
     },
   ]
 
@@ -67,14 +78,16 @@ export default function DashboardNav() {
                 pathname === item.href ? "text-primary" : "text-muted-foreground",
               )}
             >
-              {item.icon}
-              {item.name}
+              <span className="flex items-center justify-center">{item.icon}</span>
+              <span>{item.name}</span>
             </Link>
           ))}
         </nav>
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="capitalize">{theme || 'system'} mode</span>
+            <span className="capitalize">
+              {mounted ? (resolvedTheme || 'system') : 'system'} mode
+            </span>
           </div>
           <ModeToggle />
           {status === "authenticated" ? (

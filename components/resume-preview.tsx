@@ -20,9 +20,10 @@ interface ResumePreviewProps {
     structure: string[]
     compatibility: number
   }
+  template: string
 }
 
-export default function ResumePreview({ resumeData, feedback, score, jobTarget, atsFeedback }: ResumePreviewProps) {
+export default function ResumePreview({ resumeData, feedback, score, jobTarget, atsFeedback, template }: ResumePreviewProps) {
   const resumeRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {
