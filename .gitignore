@@ -38,3 +38,6 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# Google Cloud credentials
+hackhazards25-09954bb303eb.json
