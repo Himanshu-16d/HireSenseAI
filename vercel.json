@@ -1,12 +1,15 @@
-{  "version": 2,
+{
+  "version": 2,
   "buildCommand": "pnpm run build",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app"
+    "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
+    "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app"
   },
   "build": {
     "env": {
       "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
+      "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
       "PRISMA_GENERATE": "true"
     }
   },
@@ -26,4 +29,3 @@
     }
   ]
 }
-} 
