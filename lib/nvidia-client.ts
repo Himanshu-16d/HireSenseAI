@@ -1,29 +1,50 @@
-const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v2/chat/completions";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v1/chat/completions";
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const DEFAULT_MODEL = "mixtral_8x7b";
 
 if (!NVIDIA_API_KEY) {
   console.warn("NVIDIA_API_KEY is not defined in environment variables");
 }
 
-export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string) {  try {
+interface NvidiaError {
+  message: string;
+  type?: string;
+  param?: string;
+  code?: string;
+}
+
+export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL) {
+  try {
     const response = await fetch(NVIDIA_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${NVIDIA_API_KEY}`,
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      },      body: JSON.stringify({
         messages,
         temperature: 0.7,
         max_tokens: 4000,
         top_p: 1,
         stream: false,
-        model: "mixtral_8x7b" // NVIDIA's Mixtral model
+        model
       })
     });
 
     if (!response.ok) {
-      throw new Error(`NVIDIA API call failed: ${response.status} ${await response.text()}`);
+      const errorText = await response.text();
+      let errorJson: NvidiaError | null = null;
+      
+      try {
+        errorJson = JSON.parse(errorText);
+      } catch (e) {
+        // If not JSON, use text as is
+      }
+
+      const errorMessage = errorJson?.message || errorText;
+      const error = new Error(`NVIDIA API call failed: ${response.status} - ${errorMessage}`);
+      (error as any).status = response.status;
+      (error as any).details = errorJson;
+      throw error;
     }
 
     const data = await response.json();

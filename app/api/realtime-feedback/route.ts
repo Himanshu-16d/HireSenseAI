@@ -1,12 +1,38 @@
 import { NextResponse } from "next/server";
 import { getRealtimeFeedback } from "@/actions/realtime-feedback";
 
-export async function POST(request: Request) {
-  try {
+export async function POST(request: Request) {  try {
     const { resumeData, jobDescription } = await request.json();
     const result = await getRealtimeFeedback(resumeData, jobDescription);
     return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to get real-time feedback" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Real-time feedback error:", error);
+
+    // Handle specific API errors
+    if (error.status === 404) {
+      return NextResponse.json(
+        { error: "NVIDIA API endpoint not found. Please check API configuration." },
+        { status: 404 }
+      );
+    }
+
+    if (error.status === 401) {
+      return NextResponse.json(
+        { error: "Invalid NVIDIA API key. Please check your credentials." },
+        { status: 401 }
+      );
+    }
+
+    // Handle other errors
+    const statusCode = error.status || 500;
+    const errorMessage = error.message || "Failed to get real-time feedback";
+    
+    return NextResponse.json(
+      { 
+        error: errorMessage,
+        details: error.details || undefined
+      },
+      { status: statusCode }
+    );
   }
 } 

@@ -4,13 +4,17 @@
   "installCommand": "pnpm install --no-frozen-lockfile",
   "env": {
     "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
-    "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app"
+    "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
+    "NVIDIA_API_URL": "https://api.nvcf.nvidia.com/v1/chat/completions",
+    "NODE_ENV": "production"
   },
   "build": {
     "env": {
       "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
       "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
-      "PRISMA_GENERATE": "true"
+      "PRISMA_GENERATE": "true",
+      "NVIDIA_API_URL": "https://api.nvcf.nvidia.com/v1/chat/completions",
+      "NODE_ENV": "production"
     }
   },
   "functions": {
