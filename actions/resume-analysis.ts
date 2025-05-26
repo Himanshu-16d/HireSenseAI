@@ -1,6 +1,6 @@
 "use server"
 
-import { callNvidiaAPI, MODELS, analyzeResumeRealtime } from "@/lib/groq-client"
+import { callNvidiaAPI, MODELS } from "@/lib/nvidia-client"
 import type { ResumeAnalysis } from "@/types/resume"
 
 export interface CompanyDetails {
@@ -88,12 +88,35 @@ export async function generateJobDescription(
   jobDetails: JobDetails
 ): Promise<GeneratedJobDescription> {
   try {
-    if (!process.env.GROQ_API_KEY) {
-      console.warn("GROQ_API_KEY is not configured, using default job description");
+    if (!process.env.NVIDIA_API_KEY) {
+      console.warn("NVIDIA_API_KEY is not configured, using default job description");
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
 
-    const prompt = `You are writing a job description for ${jobDetails.title} position at ${companyDetails.companyName}.
+    const industries = {
+      technology: "software, hardware, and digital innovation",
+      finance: "financial services and technology",
+      healthcare: "healthcare and medical technology",
+      education: "educational technology and services",
+      retail: "retail and e-commerce solutions"
+    };
+    
+    const industryContext = industries[companyDetails.industry.toLowerCase() as keyof typeof industries] || companyDetails.industry;
+
+    const maxRetries = 2;
+    let attempts = 0;
+    let result;
+
+    while (attempts < maxRetries) {
+      try {
+        const response = await callNvidiaAPI([
+          {
+            role: "system",
+            content: "You are an expert HR professional who creates compelling job descriptions that are modern, engaging, and optimized for candidates in the technology industry."
+          },
+          {
+            role: "user",
+            content: `Create a compelling job description for ${jobDetails.title} position at ${companyDetails.companyName}, a company in the ${industryContext} space.
 
 COMPANY INFORMATION:
 Company: ${companyDetails.companyName}
@@ -117,7 +140,7 @@ Create a compelling and detailed job description that will attract top talent. I
 5. Competitive benefits and perks
 6. Company culture and growth opportunities
 
-Format the response as a valid JSON object with the following structure:
+Return ONLY a valid JSON object with this structure:
 {
   "jobTitle": string,
   "overview": string,
@@ -127,21 +150,20 @@ Format the response as a valid JSON object with the following structure:
   "benefits": string[],
   "additionalInfo": string
 }`
+          }
+        ], MODELS.JOB_MATCHING);
 
-    const response = await callNvidiaAPI([
-      {
-        role: "system",
-        content: "You are an expert HR professional who creates compelling job descriptions."
-      },
-      {
-        role: "user",
-        content: prompt
+        result = response.choices[0]?.message?.content;
+        if (result && result.trim()) break;
+      } catch (apiError) {
+        attempts++;
+        if (attempts === maxRetries) throw apiError;
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Exponential backoff
       }
-    ], MODELS.JOB_MATCHING);
+    }
 
-    const result = response.choices[0]?.message?.content;
     if (!result) {
-      console.error("Empty response from Groq API");
+      console.error("Empty response from NVIDIA API");
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
 
@@ -153,7 +175,7 @@ Format the response as a valid JSON object with the following structure:
       }
       return parsed;
     } catch (parseError) {
-      console.error("Error parsing Groq API response:", parseError);
+      console.error("Error parsing NVIDIA API response:", parseError);
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
   } catch (error) {
@@ -171,8 +193,14 @@ export interface CoverLetterRequest {
 
 export async function generateCoverLetter(request: CoverLetterRequest): Promise<string> {
   try {
-    const prompt = `
-Generate a professional cover letter based on the following information:
+    const response = await callNvidiaAPI([
+      {
+        role: "system",
+        content: "You are an expert career coach who writes compelling cover letters. Always respond with plain text only, no markdown or formatting."
+      },
+      {
+        role: "user",
+        content: `Generate a professional cover letter based on the following information:
 
 RESUME:
 ${request.resumeText}
@@ -183,103 +211,77 @@ ${request.jobDescription}
 COMPANY: ${request.companyName}
 POSITION: ${request.positionTitle}
 
-Please create a compelling cover letter that:
+Create a compelling cover letter that:
 1. Highlights relevant experience and skills
 2. Demonstrates enthusiasm for the position
 3. Shows understanding of the company's needs
 4. Maintains a professional tone
 5. Is tailored to the specific job and company
 
-Return the cover letter as plain text only, with no additional formatting or markdown.
-`
-
-    const response = await callNvidiaAPI([
-      {
-        role: "system",
-        content: "You are an expert career coach who writes compelling cover letters. Always respond with plain text only, no markdown or formatting."
-      },
-      {
-        role: "user",
-        content: prompt
+Return the cover letter as plain text only, with no additional formatting.`
       }
-    ], MODELS.COVER_LETTER)
+    ], MODELS.COVER_LETTER);
 
-    const result = response.choices[0]?.message?.content
+    const result = response.choices[0]?.message?.content;
     if (!result) {
-      throw new Error("No response from Groq API")
+      throw new Error("No response from NVIDIA API");
     }
 
     return result.trim()
       .replace(/^```\s*/, '') // Remove leading ```
       .replace(/```\s*$/, '') // Remove trailing ```
-      .trim()
+      .trim();
   } catch (error) {
-    console.error("Error generating cover letter:", error)
-    return "Error generating cover letter. Please try again."
+    console.error("Error generating cover letter:", error);
+    return "Error generating cover letter. Please try again.";
   }
 }
 
 export async function analyzeResume(resumeText: string): Promise<ResumeAnalysis> {
   try {
-    // Get instant analysis
-    const instantAnalysis = await analyzeResumeRealtime({ resumeText });
-    
-    // Get detailed analysis from Groq
-    const prompt = `
-Analyze the following resume and provide feedback in JSON format:
-
-${resumeText}
-
-Please provide a JSON response with the following structure:
-{
-  "score": number (0-100),
-  "strengths": ["list", "of", "strengths"],
-  "improvements": ["list", "of", "areas", "for", "improvement"],
-  "keywords": ["list", "of", "important", "keywords", "for", "ATS"],
-  "recommendations": ["list", "of", "specific", "recommendations"]
-}
-`
-
     const response = await callNvidiaAPI([
       {
         role: "system",
-        content: "You are an expert resume reviewer with years of experience in HR and recruitment. Always respond with valid JSON only, no additional text or formatting."
+        content: "You are an expert resume reviewer with years of experience in HR and recruitment. Always respond with valid JSON only."
       },
       {
         role: "user",
-        content: prompt
+        content: `Analyze the following resume and provide feedback:
+
+${resumeText}
+
+Return ONLY a valid JSON object with this structure:
+{
+  "score": number between 0-100,
+  "strengths": array of strings listing strengths,
+  "improvements": array of strings listing areas for improvement,
+  "keywords": array of strings listing important keywords for ATS,
+  "recommendations": array of strings with specific recommendations
+}`
       }
-    ], MODELS.RESUME_ANALYSIS)
+    ], MODELS.RESUME_ANALYSIS);
 
-    const result = response.choices[0]?.message?.content
+    const result = response.choices[0]?.message?.content;
     if (!result) {
-      throw new Error("No response from Groq API")
+      throw new Error("No response from NVIDIA API");
     }
 
-    // Clean and parse the response
-    const cleanedResult = result.trim()
-      .replace(/^```json\s*/, '')
-      .replace(/```\s*$/, '')
-      .trim()
-
-    const parsedResult = JSON.parse(cleanedResult)
-    
-    // Combine instant and detailed analysis
+    const parsedResult = JSON.parse(result);
     return {
-      score: parsedResult.score || instantAnalysis.atsScore || 0,
+      score: parsedResult.score || 0,
       strengths: parsedResult.strengths || [],
-      improvements: parsedResult.improvements || instantAnalysis.suggestions || [],
-      keywords: parsedResult.keywords || instantAnalysis.keywords || [],
+      improvements: parsedResult.improvements || [],
+      keywords: parsedResult.keywords || [],
       recommendations: parsedResult.recommendations || []
-    }
+    };
   } catch (error) {
-    console.error("Error analyzing resume:", error)
+    console.error("Error analyzing resume:", error);
     return {
       score: 0,
       strengths: [],
       improvements: [],
       keywords: [],
       recommendations: []
-    }
+    };
   }
 }

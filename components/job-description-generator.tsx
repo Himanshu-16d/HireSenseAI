@@ -52,55 +52,54 @@ export function JobDescriptionGenerator() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setConciseJobDescription(null)
+    e.preventDefault();
+    setError(null);
+    setGeneratedDescription(null);
+    setConciseJobDescription(null);
     
     // Validate required fields
     const requiredFields = {
       companyName: "Company name",
       location: "Location",
-      companySize: "Company size",
       companyDescription: "Company description",
       title: "Job title",
       department: "Department"
-    }
+    };
 
     for (const [field, label] of Object.entries(requiredFields)) {
       if (!companyDetails[field as keyof CompanyDetails] && field in companyDetails) {
-        setError(`${label} is required`)
-        return
+        setError(`${label} is required`);
+        return;
       }
       if (!jobDetails[field as keyof JobDetails] && field in jobDetails) {
-        setError(`${label} is required`)
-      return
+        setError(`${label} is required`);
+        return;
       }
     }
-
-    setIsLoading(true)
+    
+    setIsLoading(true);
 
     try {
       if (conciseFormat) {
         // Generate concise job description format
         const conciseDesc = `**${jobDetails.title}** @ ${companyDetails.companyName}  
-Design and develop scalable solutions for ${companyDetails.industry || "the industry"}, collaborating with cross-functional teams to drive innovation in ${jobDetails.department}.  
-Ideal candidates excel in problem-solving, possess strong technical skills, and thrive in ${jobDetails.workplaceType.toLowerCase()} ${companyDetails.companySize} environments.`
+Design and develop scalable solutions in ${companyDetails.industry || "the industry"}, collaborating with cross-functional teams to drive innovation in ${jobDetails.department}.  
+Ideal candidates excel in problem-solving, possess strong technical skills, and thrive in ${jobDetails.workplaceType.toLowerCase()} environments at ${companyDetails.companyName}.`;
         
-        setConciseJobDescription(conciseDesc)
-        setGeneratedDescription(null)
+        setConciseJobDescription(conciseDesc);
       } else {
         // Generate detailed job description
-        const result = await generateJobDescription(companyDetails, jobDetails)
-        if (result.overview.includes("Failed to generate job description")) {
-          throw new Error(result.overview)
+        const result = await generateJobDescription(companyDetails, jobDetails);
+        if (!result.overview || result.overview.includes("Failed to generate")) {
+          throw new Error("Failed to generate job description. Please try again.");
         }
-        setGeneratedDescription(result)
+        setGeneratedDescription(result);
       }
     } catch (error: any) {
-      console.error("Error generating job description:", error)
-      setError(error.message || "Failed to generate job description. Please try again.")
+      console.error("Error generating job description:", error);
+      setError(error.message || "Failed to generate job description. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -418,4 +417,4 @@ Ideal candidates excel in problem-solving, possess strong technical skills, and 
       )}
     </div>
   )
-} 
+}

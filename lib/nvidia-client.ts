@@ -1,45 +1,50 @@
-import OpenAI from "openai";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v2/chat/completions";
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-if (!GROQ_API_KEY) {
-  console.warn("GROQ_API_KEY is not defined in environment variables");
+if (!NVIDIA_API_KEY) {
+  console.warn("NVIDIA_API_KEY is not defined in environment variables");
 }
 
-export const openai = new OpenAI({
-  baseURL: "https://api.groq.com/v1",
-  apiKey: GROQ_API_KEY,
-});
-
-export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string) {
-  try {
-    const response = await openai.chat.completions.create({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: 4000,
-      top_p: 1,
-      stream: false,
+export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string) {  try {
+    const response = await fetch(NVIDIA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages,
+        temperature: 0.7,
+        max_tokens: 4000,
+        top_p: 1,
+        stream: false,
+        model: "mixtral_8x7b" // NVIDIA's Mixtral model
+      })
     });
-    
-    if (!response.choices?.[0]?.message) {
-      throw new Error("Invalid response format from Groq API");
+
+    if (!response.ok) {
+      throw new Error(`NVIDIA API call failed: ${response.status} ${await response.text()}`);
     }
-    
-    return response;
+
+    const data = await response.json();
+    if (!data.choices?.[0]?.message) {
+      throw new Error("Invalid response format from NVIDIA API");
+    }
+
+    return data;
   } catch (error) {
-    console.error("Groq API call failed:", error);
-    // Re-throw the error to be handled by the calling function
+    console.error("NVIDIA API call failed:", error);
     throw error;
   }
 }
 
 // Model configuration
 export const MODELS = {
-  RESUME_ANALYSIS: "llama2-70b-4096",
-  JOB_MATCHING: "llama2-70b-4096",
-  COVER_LETTER: "llama2-70b-4096",
-  SKILL_ANALYSIS: "llama2-70b-4096",
-  REALTIME_MATCHING: "llama2-70b-4096"
+  RESUME_ANALYSIS: "mixtral_8x7b",
+  JOB_MATCHING: "mixtral_8x7b",
+  COVER_LETTER: "mixtral_8x7b",
+  SKILL_ANALYSIS: "mixtral_8x7b",
+  REALTIME_MATCHING: "mixtral_8x7b"
 } as const
 
 // Real-time analysis function

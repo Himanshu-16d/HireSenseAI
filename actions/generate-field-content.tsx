@@ -1,5 +1,5 @@
 "use server";
-import { callNvidiaAPI } from "@/lib/groq-client";
+import { callNvidiaAPI } from "@/lib/nvidia-client";
 
 export async function generateFieldContent({
   field,
