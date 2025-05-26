@@ -13,5 +13,6 @@
     "env": {
       "NEXT_PUBLIC_APP_URL": "${VERCEL_URL}"
     }
-  }
+  },
+  "installCommand": "npm install --legacy-peer-deps"
 } 
