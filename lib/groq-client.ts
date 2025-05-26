@@ -1,13 +1,13 @@
 import OpenAI from "openai";
 
-console.log("DEBUG: NVIDIA_API_KEY =", process.env.NVIDIA_API_KEY);
-if (!process.env.NVIDIA_API_KEY) {
-  throw new Error("NVIDIA_API_KEY is not defined in environment variables");
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (!GROQ_API_KEY) {
+  console.warn("GROQ_API_KEY is not defined in environment variables");
 }
 
 export const openai = new OpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY,
+  baseURL: "https://api.groq.com/v1",
+  apiKey: GROQ_API_KEY,
 });
 
 export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string) {
@@ -16,23 +16,30 @@ export async function callNvidiaAPI(messages: { role: string; content: string }[
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 2048,
+      max_tokens: 4000,
+      top_p: 1,
       stream: false,
     });
+    
+    if (!response.choices?.[0]?.message) {
+      throw new Error("Invalid response format from Groq API");
+    }
+    
     return response;
   } catch (error) {
-    console.error("NVIDIA API call failed:", error);
+    console.error("Groq API call failed:", error);
+    // Re-throw the error to be handled by the calling function
     throw error;
   }
 }
 
 // Model configuration
 export const MODELS = {
-  RESUME_ANALYSIS: "deepseek-r1-distill-llama-70b",
-  JOB_MATCHING: "deepseek-r1-distill-llama-70b",
-  COVER_LETTER: "deepseek-r1-distill-llama-70b",
-  SKILL_ANALYSIS: "deepseek-r1-distill-llama-70b",
-  REALTIME_MATCHING: "deepseek-r1-distill-llama-70b"
+  RESUME_ANALYSIS: "llama2-70b-4096",
+  JOB_MATCHING: "llama2-70b-4096",
+  COVER_LETTER: "llama2-70b-4096",
+  SKILL_ANALYSIS: "llama2-70b-4096",
+  REALTIME_MATCHING: "llama2-70b-4096"
 } as const
 
 // Real-time analysis function

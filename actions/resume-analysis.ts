@@ -29,17 +29,75 @@ export interface GeneratedJobDescription {
   additionalInfo: string;
 }
 
+// Helper function to validate job description format
+function validateJobDescription(description: any): description is GeneratedJobDescription {
+  return (
+    description &&
+    typeof description.jobTitle === "string" &&
+    typeof description.overview === "string" &&
+    Array.isArray(description.responsibilities) &&
+    Array.isArray(description.requirements) &&
+    Array.isArray(description.qualifications) &&
+    Array.isArray(description.benefits) &&
+    typeof description.additionalInfo === "string"
+  );
+}
+
+// Helper function to create a default job description
+function createDefaultJobDescription(
+  jobDetails: JobDetails,
+  companyDetails: CompanyDetails
+): GeneratedJobDescription {
+  const overview = `Join ${companyDetails.companyName} as a ${jobDetails.title} in our ${jobDetails.department} department. We are seeking an experienced professional to contribute to our growing team in a ${jobDetails.workplaceType.toLowerCase()} environment.`;
+
+  return {
+    jobTitle: jobDetails.title,
+    overview,
+    responsibilities: [
+      `Contribute to the development and growth of ${companyDetails.companyName}'s ${jobDetails.department} initiatives`,
+      "Collaborate with cross-functional teams to achieve business objectives",
+      "Apply industry best practices and maintain high quality standards",
+      "Participate in planning and execution of key projects"
+    ],
+    requirements: [
+      `${jobDetails.experienceLevel} experience in ${jobDetails.department}`,
+      "Strong analytical and problem-solving skills",
+      "Excellent communication and teamwork abilities",
+      "Proven track record of delivering results"
+    ],
+    qualifications: [
+      "Bachelor's degree in a related field",
+      `${jobDetails.experienceLevel === 'Entry-Level' ? '0-2' : 
+        jobDetails.experienceLevel === 'Mid-Level' ? '3-5' :
+        jobDetails.experienceLevel === 'Senior' ? '5+' :
+        jobDetails.experienceLevel === 'Lead' ? '7+' : '10+'} years of relevant experience`,
+      "Professional certifications are a plus"
+    ],
+    benefits: [
+      "Competitive salary and benefits package",
+      `${jobDetails.workplaceType} work environment`,
+      "Professional development opportunities",
+      "Health insurance and retirement plans"
+    ],
+    additionalInfo: `${companyDetails.companyName} is ${companyDetails.companyDescription} We are an equal opportunity employer and value diversity at our company.`
+  };
+}
+
 export async function generateJobDescription(
   companyDetails: CompanyDetails,
   jobDetails: JobDetails
 ): Promise<GeneratedJobDescription> {
   try {
-    const prompt = `
-Generate a detailed job description for the following position:
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("GROQ_API_KEY is not configured, using default job description");
+      return createDefaultJobDescription(jobDetails, companyDetails);
+    }
+
+    const prompt = `You are writing a job description for ${jobDetails.title} position at ${companyDetails.companyName}.
 
 COMPANY INFORMATION:
 Company: ${companyDetails.companyName}
-Industry: ${companyDetails.industry}
+Industry: ${companyDetails.industry || 'Technology'}
 Location: ${companyDetails.location}
 Company Size: ${companyDetails.companySize}
 Company Description: ${companyDetails.companyDescription}
@@ -51,15 +109,15 @@ Employment Type: ${jobDetails.employmentType}
 Experience Level: ${jobDetails.experienceLevel}
 Workplace Type: ${jobDetails.workplaceType}
 
-Please create a comprehensive job description that includes:
-1. A compelling job overview
-2. Key responsibilities
-3. Required skills and qualifications
-4. Educational requirements
-5. Benefits and perks
-6. Additional relevant information
+Create a compelling and detailed job description that will attract top talent. Include:
+1. A powerful overview highlighting the impact and opportunity
+2. 5-7 key responsibilities focused on outcomes
+3. Required technical skills and qualifications
+4. Essential educational requirements
+5. Competitive benefits and perks
+6. Company culture and growth opportunities
 
-Return the response in the following JSON format:
+Format the response as a valid JSON object with the following structure:
 {
   "jobTitle": string,
   "overview": string,
@@ -68,8 +126,7 @@ Return the response in the following JSON format:
   "qualifications": string[],
   "benefits": string[],
   "additionalInfo": string
-}
-`
+}`
 
     const response = await callNvidiaAPI([
       {
@@ -80,30 +137,28 @@ Return the response in the following JSON format:
         role: "user",
         content: prompt
       }
-    ], MODELS.JOB_MATCHING)
+    ], MODELS.JOB_MATCHING);
 
-    const result = response.choices[0]?.message?.content
+    const result = response.choices[0]?.message?.content;
     if (!result) {
-      throw new Error("No response from Groq API")
+      console.error("Empty response from Groq API");
+      return createDefaultJobDescription(jobDetails, companyDetails);
     }
 
     try {
-      return JSON.parse(result)
+      const parsed = JSON.parse(result);
+      if (!validateJobDescription(parsed)) {
+        console.error("Invalid job description format from API");
+        return createDefaultJobDescription(jobDetails, companyDetails);
+      }
+      return parsed;
     } catch (parseError) {
-      console.error("Error parsing Groq API response:", parseError)
-      throw new Error("Invalid JSON response from Groq API")
+      console.error("Error parsing Groq API response:", parseError);
+      return createDefaultJobDescription(jobDetails, companyDetails);
     }
   } catch (error) {
-    console.error("Error generating job description:", error)
-    return {
-      jobTitle: jobDetails.title,
-      overview: "Error generating job description. Please try again.",
-      responsibilities: [],
-      requirements: [],
-      qualifications: [],
-      benefits: [],
-      additionalInfo: ""
-    }
+    console.error("Error generating job description:", error);
+    return createDefaultJobDescription(jobDetails, companyDetails);
   }
 }
 
