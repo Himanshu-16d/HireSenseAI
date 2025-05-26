@@ -1,11 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
   "env": {
     "NEXT_PUBLIC_APP_URL": "${VERCEL_URL}"
   },
@@ -13,6 +9,5 @@
     "env": {
       "NEXT_PUBLIC_APP_URL": "${VERCEL_URL}"
     }
-  },
-  "installCommand": "npm install --legacy-peer-deps"
+  }
 } 
