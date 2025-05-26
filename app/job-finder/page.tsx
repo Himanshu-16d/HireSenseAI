@@ -1,6 +1,7 @@
 import JobFinder from "@/components/job-finder"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import ProtectedRoute from "@/components/protected-route"
+import JobSearchVisualizations from "@/components/JobSearchVisualizations"
 
 export default function JobFinderPage() {
   return (
@@ -15,6 +16,9 @@ export default function JobFinderPage() {
             <JobFinder />
           </CardContent>
         </Card>
+        
+        {/* Add the job search visualizations */}
+        <JobSearchVisualizations />
       </main>
     </ProtectedRoute>
   )
