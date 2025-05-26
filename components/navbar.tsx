@@ -64,6 +64,16 @@ export function Navbar() {
               Job Finder
             </Link>
             <Link 
+              href={session ? "/job-insights" : "/login?redirect=/job-insights"}
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/job-insights" && "text-primary font-semibold bg-primary/10"
+              )}
+              onClick={() => !session && handleProtectedRoute()}
+            >
+              Job Insights
+            </Link>
+            <Link 
               href="/about" 
               className={cn(
                 "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
@@ -108,6 +118,16 @@ export function Navbar() {
           onClick={() => !session && handleProtectedRoute()}
         >
           Job Finder
+        </Link>
+        <Link 
+          href={session ? "/job-insights" : "/login?redirect=/job-insights"}
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/job-insights" && "text-primary font-semibold bg-primary/10"
+          )}
+          onClick={() => !session && handleProtectedRoute()}
+        >
+          Job Insights
         </Link>
         <Link 
           href="/about"

@@ -28,7 +28,6 @@ const nextConfig = {
     return config
   },
   experimental: {
-    serverActions: true,
     serverComponentsExternalPackages: ['bcryptjs'],
   },
   async rewrites() {

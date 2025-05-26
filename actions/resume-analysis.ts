@@ -1,6 +1,6 @@
 "use server"
 
-import { callGroqAPI, MODELS, analyzeResumeRealtime } from "@/lib/groq-client"
+import { callNvidiaAPI, MODELS, analyzeResumeRealtime } from "@/lib/groq-client"
 import type { ResumeAnalysis } from "@/types/resume"
 
 export interface CompanyDetails {
@@ -71,7 +71,7 @@ Return the response in the following JSON format:
 }
 `
 
-    const response = await callGroqAPI([
+    const response = await callNvidiaAPI([
       {
         role: "system",
         content: "You are an expert HR professional who creates compelling job descriptions."
@@ -138,7 +138,7 @@ Please create a compelling cover letter that:
 Return the cover letter as plain text only, with no additional formatting or markdown.
 `
 
-    const response = await callGroqAPI([
+    const response = await callNvidiaAPI([
       {
         role: "system",
         content: "You are an expert career coach who writes compelling cover letters. Always respond with plain text only, no markdown or formatting."
@@ -185,7 +185,7 @@ Please provide a JSON response with the following structure:
 }
 `
 
-    const response = await callGroqAPI([
+    const response = await callNvidiaAPI([
       {
         role: "system",
         content: "You are an expert resume reviewer with years of experience in HR and recruitment. Always respond with valid JSON only, no additional text or formatting."
