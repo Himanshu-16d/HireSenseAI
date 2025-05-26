@@ -74,3 +74,4 @@ To deploy this project run
   npm run deploy
 ```
 
+# HireSenseAI
