@@ -10,16 +10,13 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, children, gradient = false, ...props }, ref) => {
-    return (
-      <motion.div
+    return (      <motion.div
         ref={ref}
         className={cn(
-          "rounded-lg border bg-card p-6 text-card-foreground shadow-sm transition-colors",
-          gradient && "bg-gradient-to-br from-card/50 to-card shadow-lg",
+          "rounded-lg border bg-card p-6 text-card-foreground",
+          gradient && "bg-gradient-to-br from-card/50 to-card",
           className
         )}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         {...props}

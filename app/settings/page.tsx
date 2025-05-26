@@ -2,13 +2,16 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
+import ProtectedRoute from "@/components/protected-route"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { Bell, Shield, User, Laptop, Download } from "lucide-react"
 import { 
   updateAccountInfo, 
   updatePassword,
@@ -17,6 +20,14 @@ import {
 } from "@/actions/settings-actions"
 
 export default function SettingsPage() {
+  return (
+    <ProtectedRoute>
+      <SettingsContent />
+    </ProtectedRoute>
+  )
+}
+
+function SettingsContent() {
   const { data: session } = useSession()
   
   // Account Information State
@@ -43,6 +54,18 @@ export default function SettingsPage() {
   const [privacySettings, setPrivacySettings] = useState({
     profileVisibility: true,
     dataCollection: true
+  })
+
+  // Additional Settings State
+  const [aiSettings, setAISettings] = useState({
+    enhancedAnalysis: true,
+    autoSuggestions: true,
+    dataSharing: true
+  })
+
+  const [exportSettings, setExportSettings] = useState({
+    includeHistory: true,
+    includeAnalytics: true
   })
 
   // Handle Account Info Update
@@ -104,206 +127,309 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="container py-10 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Settings</h1>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+      
+      <Tabs defaultValue="account" className="space-y-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-4 bg-muted p-1">
+          <TabsTrigger value="account" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Account
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Privacy
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="flex items-center gap-2">
+            <Laptop className="h-4 w-4" />
+            AI Settings
+          </TabsTrigger>
+          <TabsTrigger value="data" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Data
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs defaultValue="account">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="account" className="space-y-6">
+        <TabsContent value="account">
+          <div className="grid gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
-                <CardDescription>Update your account details</CardDescription>
+                <CardDescription>
+                  Manage your account details and authentication settings
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
                     <Label htmlFor="name">Name</Label>
-                    <Input 
-                      id="name" 
+                    <Input
+                      id="name"
                       value={accountInfo.name}
-                      onChange={(e) => setAccountInfo(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Your name" 
+                      onChange={(e) => setAccountInfo({ ...accountInfo, name: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
+                    <Input
+                      id="email"
                       type="email"
                       value={accountInfo.email}
-                      onChange={(e) => setAccountInfo(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Your email" 
+                      onChange={(e) => setAccountInfo({ ...accountInfo, email: e.target.value })}
                     />
                   </div>
                 </div>
-                <div className="flex justify-end">
-                  <Button onClick={handleAccountUpdate}>Save Changes</Button>
-                </div>
+                <Button onClick={handleAccountUpdate}>Save Changes</Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
                 <CardTitle>Password</CardTitle>
-                <CardDescription>Change your password</CardDescription>
+                <CardDescription>
+                  Update your password to keep your account secure
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <Input 
-                    id="current-password" 
-                    type="password"
-                    value={passwordInfo.currentPassword}
-                    onChange={(e) => setPasswordInfo(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input 
-                      id="new-password" 
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordInfo.currentPassword}
+                      onChange={(e) => setPasswordInfo({ ...passwordInfo, currentPassword: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
                       type="password"
                       value={passwordInfo.newPassword}
-                      onChange={(e) => setPasswordInfo(prev => ({ ...prev, newPassword: e.target.value }))}
+                      onChange={(e) => setPasswordInfo({ ...passwordInfo, newPassword: e.target.value })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input 
-                      id="confirm-password" 
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
                       type="password"
                       value={passwordInfo.confirmPassword}
-                      onChange={(e) => setPasswordInfo(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      onChange={(e) => setPasswordInfo({ ...passwordInfo, confirmPassword: e.target.value })}
                     />
                   </div>
                 </div>
-                <div className="flex justify-end">
-                  <Button onClick={handlePasswordUpdate}>Update Password</Button>
-                </div>
+                <Button onClick={handlePasswordUpdate}>Update Password</Button>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="integrations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Other Integrations</CardTitle>
-                <CardDescription>Connect other services</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Indeed</p>
-                    <p className="text-sm text-muted-foreground">Connect to find more job opportunities</p>
-                  </div>
-                  <Button variant="outline">Connect</Button>
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>
+                Choose how and when you want to be notified
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications about your account via email
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Google Drive</p>
-                    <p className="text-sm text-muted-foreground">Connect to store and access your resumes</p>
-                  </div>
-                  <Button variant="outline">Connect</Button>
+                <Switch
+                  checked={notificationSettings.emailNotifications}
+                  onCheckedChange={(checked) => 
+                    setNotificationSettings({ ...notificationSettings, emailNotifications: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Job Alerts</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified about new job matches
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <Switch
+                  checked={notificationSettings.jobAlerts}
+                  onCheckedChange={(checked) => 
+                    setNotificationSettings({ ...notificationSettings, jobAlerts: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Weekly Digest</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive a weekly summary of your job search progress
+                  </p>
+                </div>
+                <Switch
+                  checked={notificationSettings.weeklyDigest}
+                  onCheckedChange={(checked) => 
+                    setNotificationSettings({ ...notificationSettings, weeklyDigest: checked })
+                  }
+                />
+              </div>
+              <Button onClick={handleNotificationUpdate} className="w-full">
+                Save Notification Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="preferences" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>Manage your notification preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-muted-foreground">Receive emails about new job matches</p>
-                  </div>
-                  <Switch 
-                    checked={notificationSettings.emailNotifications}
-                    onCheckedChange={(checked) => {
-                      setNotificationSettings(prev => ({ ...prev, emailNotifications: checked }))
-                      handleNotificationUpdate()
-                    }}
-                  />
+        <TabsContent value="privacy">
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy Settings</CardTitle>
+              <CardDescription>
+                Control your privacy and data settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Profile Visibility</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Make your profile visible to potential employers
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Job Alerts</p>
-                    <p className="text-sm text-muted-foreground">Get notified about new jobs matching your profile</p>
-                  </div>
-                  <Switch 
-                    checked={notificationSettings.jobAlerts}
-                    onCheckedChange={(checked) => {
-                      setNotificationSettings(prev => ({ ...prev, jobAlerts: checked }))
-                      handleNotificationUpdate()
-                    }}
-                  />
+                <Switch
+                  checked={privacySettings.profileVisibility}
+                  onCheckedChange={(checked) => 
+                    setPrivacySettings({ ...privacySettings, profileVisibility: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Data Collection</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow us to collect data to improve your experience
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Weekly Digest</p>
-                    <p className="text-sm text-muted-foreground">Receive a weekly summary of job opportunities</p>
-                  </div>
-                  <Switch 
-                    checked={notificationSettings.weeklyDigest}
-                    onCheckedChange={(checked) => {
-                      setNotificationSettings(prev => ({ ...prev, weeklyDigest: checked }))
-                      handleNotificationUpdate()
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                <Switch
+                  checked={privacySettings.dataCollection}
+                  onCheckedChange={(checked) => 
+                    setPrivacySettings({ ...privacySettings, dataCollection: checked })
+                  }
+                />
+              </div>
+              <Button onClick={handlePrivacyUpdate} className="w-full">
+                Save Privacy Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy</CardTitle>
-                <CardDescription>Manage your privacy settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Profile Visibility</p>
-                    <p className="text-sm text-muted-foreground">Make your profile visible to recruiters</p>
-                  </div>
-                  <Switch 
-                    checked={privacySettings.profileVisibility}
-                    onCheckedChange={(checked) => {
-                      setPrivacySettings(prev => ({ ...prev, profileVisibility: checked }))
-                      handlePrivacyUpdate()
-                    }}
-                  />
+        <TabsContent value="ai">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Features</CardTitle>
+              <CardDescription>
+                Configure how AI assists you in your job search
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Enhanced Analysis</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Use advanced AI to analyze your resume and applications
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Data Collection</p>
-                    <p className="text-sm text-muted-foreground">
-                      Allow us to collect usage data to improve our services
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={privacySettings.dataCollection}
-                    onCheckedChange={(checked) => {
-                      setPrivacySettings(prev => ({ ...prev, dataCollection: checked }))
-                      handlePrivacyUpdate()
-                    }}
-                  />
+                <Switch
+                  checked={aiSettings.enhancedAnalysis}
+                  onCheckedChange={(checked) => 
+                    setAISettings({ ...aiSettings, enhancedAnalysis: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Auto-Suggestions</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive AI-powered suggestions for improvements
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </main>
+                <Switch
+                  checked={aiSettings.autoSuggestions}
+                  onCheckedChange={(checked) => 
+                    setAISettings({ ...aiSettings, autoSuggestions: checked })
+                  }
+                />
+              </div>
+              <Button className="w-full">
+                Save AI Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="data">
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+              <CardDescription>
+                Export or delete your data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Include History</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Include your application history in the export
+                  </p>
+                </div>
+                <Switch
+                  checked={exportSettings.includeHistory}
+                  onCheckedChange={(checked) => 
+                    setExportSettings({ ...exportSettings, includeHistory: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Include Analytics</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Include your usage analytics in the export
+                  </p>
+                </div>
+                <Switch
+                  checked={exportSettings.includeAnalytics}
+                  onCheckedChange={(checked) => 
+                    setExportSettings({ ...exportSettings, includeAnalytics: checked })
+                  }
+                />
+              </div>
+              <div className="flex gap-4">
+                <Button className="flex-1">
+                  Export Data
+                </Button>
+                <Button variant="destructive" className="flex-1">
+                  Delete Account
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

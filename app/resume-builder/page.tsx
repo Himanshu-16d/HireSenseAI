@@ -10,7 +10,7 @@ export default function ResumeBuilderPage() {
           <Card className="max-w-5xl mx-auto">
             <CardHeader className="text-center">
               <CardTitle className="text-3xl font-bold">Smart Resume Builder</CardTitle>
-              <CardDescription>Powered by Groq AI to create professional resumes with real-time feedback</CardDescription>
+              <CardDescription>Create professional resumes with real-time AI feedback</CardDescription>
             </CardHeader>
             <CardContent>
               <ResumeBuilder />

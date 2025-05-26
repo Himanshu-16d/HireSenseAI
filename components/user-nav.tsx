@@ -42,7 +42,10 @@ export function UserNav() {
               {session.user.email}
             </p>
           </div>
-        </DropdownMenuLabel>
+        </DropdownMenuLabel>        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/settings">Settings</Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
           Log out

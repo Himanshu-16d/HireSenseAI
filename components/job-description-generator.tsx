@@ -36,6 +36,8 @@ export function JobDescriptionGenerator() {
 
   const [generatedDescription, setGeneratedDescription] = useState<GeneratedJobDescription | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date())
+  const [conciseFormat, setConciseFormat] = useState(false)
+  const [conciseJobDescription, setConciseJobDescription] = useState<string | null>(null)
 
   const handleCompanyDetailsChange = (field: keyof CompanyDetails, value: string) => {
     setCompanyDetails(prev => ({ ...prev, [field]: value }))
@@ -47,29 +49,56 @@ export function JobDescriptionGenerator() {
 
   const handleMonthSelect = (date: Date | undefined) => {
     setSelectedMonth(date)
-    if (date) {
-      const formattedDate = format(date, "MMMM yyyy")
-      handleJobDetailsChange("startDate", formattedDate)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setConciseJobDescription(null)
     
-    if (!companyDetails.companyName) {
-      setError("Company name is required")
+    // Validate required fields
+    const requiredFields = {
+      companyName: "Company name",
+      location: "Location",
+      companySize: "Company size",
+      companyDescription: "Company description",
+      title: "Job title",
+      department: "Department"
+    }
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!companyDetails[field as keyof CompanyDetails] && field in companyDetails) {
+        setError(`${label} is required`)
+        return
+      }
+      if (!jobDetails[field as keyof JobDetails] && field in jobDetails) {
+        setError(`${label} is required`)
       return
+      }
     }
 
     setIsLoading(true)
 
     try {
-      const result = await generateJobDescription(companyDetails, jobDetails)
-      setGeneratedDescription(result)
-    } catch (error) {
+      if (conciseFormat) {
+        // Generate concise job description format
+        const conciseDesc = `**${jobDetails.title}** @ ${companyDetails.companyName}  
+Design and develop scalable solutions for ${companyDetails.industry || "the industry"}, collaborating with cross-functional teams to drive innovation in ${jobDetails.department}.  
+Ideal candidates excel in problem-solving, possess strong technical skills, and thrive in ${jobDetails.workplaceType.toLowerCase()} ${companyDetails.companySize} environments.`
+        
+        setConciseJobDescription(conciseDesc)
+        setGeneratedDescription(null)
+      } else {
+        // Generate detailed job description
+        const result = await generateJobDescription(companyDetails, jobDetails)
+        if (result.overview.includes("Failed to generate job description")) {
+          throw new Error(result.overview)
+        }
+        setGeneratedDescription(result)
+      }
+    } catch (error: any) {
       console.error("Error generating job description:", error)
-      setError("Failed to generate job description. Please try again.")
+      setError(error.message || "Failed to generate job description. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -114,6 +143,7 @@ export function JobDescriptionGenerator() {
                     id="location"
                     value={companyDetails.location}
                     onChange={(e) => handleCompanyDetailsChange("location", e.target.value)}
+                    placeholder="e.g., New York, NY"
                     required
                   />
                 </div>
@@ -134,6 +164,7 @@ export function JobDescriptionGenerator() {
                   id="companyDescription"
                   value={companyDetails.companyDescription}
                   onChange={(e) => handleCompanyDetailsChange("companyDescription", e.target.value)}
+                  placeholder="Brief description of the company..."
                   required
                 />
               </div>
@@ -149,6 +180,7 @@ export function JobDescriptionGenerator() {
                     value={jobDetails.title}
                     onChange={(e) => handleJobDetailsChange("title", e.target.value)}
                     placeholder="e.g., Senior Software Engineer"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -158,6 +190,7 @@ export function JobDescriptionGenerator() {
                     value={jobDetails.department}
                     onChange={(e) => handleJobDetailsChange("department", e.target.value)}
                     placeholder="e.g., Engineering, Marketing"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -239,11 +272,25 @@ export function JobDescriptionGenerator() {
                         fromYear={2000}
                         toYear={new Date().getFullYear() + 1}
                         captionLayout="dropdown"
-                        showMonthOnly
+                        ISOWeek
+                        disabled={{ before: new Date() }}
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-4">
+                <input
+                  type="checkbox"
+                  id="conciseFormat"
+                  checked={conciseFormat}
+                  onChange={(e) => setConciseFormat(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="conciseFormat" className="text-sm font-medium">
+                  Generate concise 3-line job description format
+                </Label>
               </div>
             </div>
 
@@ -253,7 +300,7 @@ export function JobDescriptionGenerator() {
               </Alert>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -288,7 +335,31 @@ export function JobDescriptionGenerator() {
         </CardContent>
       </Card>
 
-      {generatedDescription && (
+      {conciseJobDescription && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Concise Job Description</CardTitle>
+            <CardDescription>3-Line Format</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted p-4 rounded-md whitespace-pre-line">
+              {conciseJobDescription}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  navigator.clipboard.writeText(conciseJobDescription);
+                }}
+              >
+                Copy to Clipboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {generatedDescription && !conciseJobDescription && (
         <Card>
           <CardHeader>
             <CardTitle>{generatedDescription.jobTitle}</CardTitle>

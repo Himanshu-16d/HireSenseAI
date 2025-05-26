@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Navbar } from "@/components/navbar"
+import SplineBackground from "@/components/SplineBackground"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const poppins = Poppins({ 
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
+        <SplineBackground />
         <Providers>
           <Navbar />
           <main className="min-h-[calc(100vh-4rem)]">

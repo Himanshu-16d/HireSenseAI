@@ -295,7 +295,7 @@ export default function JobFinder() {
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {jobListings.map((job) => (
-                      <div key={job.id} className="transition-all duration-200 hover:scale-[1.02]">
+                      <div key={job.id}>
                         <JobListingCard job={job} />
                       </div>
                     ))}

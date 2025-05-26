@@ -140,7 +140,7 @@ export const JobSearch = () => {
 
           <div className="mt-8 space-y-4">
             {jobs.map((job) => (
-              <Card key={job.id} className="hover:shadow-lg transition-shadow">
+              <Card key={job.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div>
@@ -186,4 +186,4 @@ export const JobSearch = () => {
       </Card>
     </div>
   )
-}
+}

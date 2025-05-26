@@ -28,7 +28,20 @@ const nextConfig = {
     return config
   },
   experimental: {
+    serverActions: true,
     serverComponentsExternalPackages: ['bcryptjs'],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/ai/:path*',
+        destination: 'http://localhost:8003/v1/:path*',
+      },
+      {
+        source: '/api/health',
+        destination: 'http://localhost:8003/health',
+      }
+    ];
   },
 }
 

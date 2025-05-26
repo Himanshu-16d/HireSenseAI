@@ -1,6 +1,29 @@
-console.log("DEBUG: GROQ_API_KEY =", process.env.GROQ_API_KEY);
-if (!process.env.GROQ_API_KEY) {
-  throw new Error("GROQ_API_KEY is not defined in environment variables")
+import OpenAI from "openai";
+
+console.log("DEBUG: NVIDIA_API_KEY =", process.env.NVIDIA_API_KEY);
+if (!process.env.NVIDIA_API_KEY) {
+  throw new Error("NVIDIA_API_KEY is not defined in environment variables");
+}
+
+export const openai = new OpenAI({
+  baseURL: "https://integrate.api.nvidia.com/v1",
+  apiKey: process.env.NVIDIA_API_KEY,
+});
+
+export async function callNvidiaAPI(messages: { role: string; content: string }[], model: string) {
+  try {
+    const response = await openai.chat.completions.create({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2048,
+      stream: false,
+    });
+    return response;
+  } catch (error) {
+    console.error("NVIDIA API call failed:", error);
+    throw error;
+  }
 }
 
 // Model configuration
@@ -11,39 +34,6 @@ export const MODELS = {
   SKILL_ANALYSIS: "deepseek-r1-distill-llama-70b",
   REALTIME_MATCHING: "deepseek-r1-distill-llama-70b"
 } as const
-
-// Function to make Groq API calls
-export async function callGroqAPI(messages: { role: string; content: string }[], model: string) {
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: messages.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        })),
-        temperature: 0.7,
-        max_tokens: 2048,
-        stream: false
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(`Groq API error: ${response.statusText}${errorData ? ` - ${JSON.stringify(errorData)}` : ''}`);
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error("Groq API call failed:", error);
-    throw error;
-  }
-}
 
 // Real-time analysis function
 export async function analyzeResumeRealtime(resumeData: any, jobDescription?: string) {
@@ -71,7 +61,7 @@ Return as JSON with the following structure:
 }
 `
 
-  const response = await callGroqAPI([
+  const response = await callNvidiaAPI([
     {
       role: "system",
       content: "You are a real-time resume analysis expert providing instant feedback."

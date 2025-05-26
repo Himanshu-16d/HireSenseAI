@@ -13,24 +13,26 @@ import { Loader2, Layout, FileText, Palette } from "lucide-react"
 import { LocationSearch } from "@/components/ui/location-search"
 import { Label } from "@/components/ui/label"
 
-const TEMPLATES = [
-  {
-    id: "modern",
-    name: "Modern",
+const TEMPLATES = [  {
+    id: "template1",
+    name: "Template 1",
     icon: <Layout className="h-5 w-5 text-primary" />,
-    description: "Clean, modern layout with bold headings."
+    description: "Clean, modern layout with bold headings.",
+    image: "/templates/template1.png"
   },
   {
-    id: "classic",
-    name: "Classic",
+    id: "template2",
+    name: "Template 2",
     icon: <FileText className="h-5 w-5 text-primary" />,
-    description: "Traditional, ATS-friendly format."
+    description: "Traditional, ATS-friendly format.",
+    image: "/templates/template2.png"
   },
   {
-    id: "minimal",
-    name: "Minimal",
+    id: "template3",
+    name: "Template 3",
     icon: <Palette className="h-5 w-5 text-primary" />,
-    description: "Minimalist, elegant design."
+    description: "Minimalist, elegant design.",
+    image: "/templates/template3.png"
   }
 ]
 
@@ -98,7 +100,7 @@ export default function ResumeBuilder() {
   const [score, setScore] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("edit")
-  const [selectedTemplate, setSelectedTemplate] = useState("modern")
+  const [selectedTemplate, setSelectedTemplate] = useState("template1")
 
   const handleResumeChange = (newData: ResumeData) => {
     setResumeData(newData)
@@ -141,18 +143,46 @@ export default function ResumeBuilder() {
         <div className="font-semibold text-lg flex items-center gap-2">
           <Palette className="h-5 w-5 text-primary" />
           Choose Resume Template:
-        </div>
-        <div className="flex gap-4 flex-wrap">
-          {TEMPLATES.map((tpl) => (
+        </div>        <div className="flex gap-8 flex-wrap justify-center">          {TEMPLATES.map((tpl) => (
             <button
-              key={tpl.id}
-              className={`flex flex-col items-center px-4 py-2 rounded-lg border-2 transition-all shadow-sm ${selectedTemplate === tpl.id ? "border-primary bg-primary/10" : "border-muted"}`}
+              key={tpl.id}              className={`group relative flex flex-col items-center rounded-lg border-2 transition-all w-[150px] ${
+                selectedTemplate === tpl.id 
+                  ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(139,92,246,0.4)] dark:shadow-[0_0_25px_rgba(139,92,246,0.3)] scale-105" 
+                  : "border-muted hover:border-primary/50"
+              }`}
               onClick={() => setSelectedTemplate(tpl.id)}
               type="button"
-              title={tpl.description}
-            >
-              {tpl.icon}
-              <span className="mt-1 font-medium text-sm">{tpl.name}</span>
+            >              <div className="relative w-full aspect-[3/4] overflow-visible rounded-t-lg">
+                <img
+                  src={tpl.image}
+                  alt={`${tpl.name} template preview`}
+                  className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className={`absolute inset-0 bg-primary/10 transition-opacity ${
+                  selectedTemplate === tpl.id ? "opacity-0" : "opacity-100 group-hover:opacity-0"
+                }`} />
+                {/* Hover Preview */}
+                <div className="fixed opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                     style={{
+                       left: 'calc(100% + 16px)',
+                       top: '50%',
+                       transform: 'translateY(-50%)',
+                     }}>
+                  <div className="bg-background border-2 border-border rounded-lg p-2 shadow-xl">
+                    <img
+                      src={tpl.image}
+                      alt={`${tpl.name} template large preview`}
+                      className="w-[400px] aspect-[3/4] object-cover rounded"
+                    />
+                  </div>
+                </div>
+              </div><div className="p-1.5 text-center w-full border-t border-border bg-background">
+                <div className="flex items-center justify-center gap-1">
+                  {tpl.icon}
+                  <span className="font-medium text-xs">{tpl.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{tpl.description}</p>
+              </div>
             </button>
           ))}
         </div>

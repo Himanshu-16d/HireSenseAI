@@ -7,7 +7,7 @@ import type { ResumeData, JobTarget, ResumeEnhancementResult } from "@/types/res
 // Initialize Groq client with API key
 const groqClient = groq(process.env.GROQ_API_KEY!)
 
-export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget): Promise<ResumeEnhancementResult> {
+export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string): Promise<ResumeEnhancementResult> {
   try {
     // Convert resume data to a string format for the AI
     const resumeString = JSON.stringify(resumeData, null, 2)
@@ -15,7 +15,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
 
     // Generate enhanced resume using Groq
     const { text } = await generateText({
-      model: groqClient("deepseek-r1-distill-llama-70b"),
+      model: groqClient,
       prompt: `
         You are an expert resume writer and career coach. Your task is to enhance the following resume to make it more effective for the target job.
         
@@ -25,12 +25,16 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
         TARGET JOB:
         ${jobTargetString}
         
+        TEMPLATE: ${template}
+        
         Please analyze the resume and the target job, then:
         1. Enhance the resume content to better align with the target job
         2. Improve the wording and impact of bullet points
         3. Highlight relevant skills and experiences
-        4. Provide specific feedback on how to improve the resume further
-        5. Score the resume's match with the target job on a scale of 0-100
+        4. Structure the resume to match the exact sections, order, and color style of the template named '${template}'.
+        5. Use the same topics, section placement, and color scheme as the template.
+        6. Provide specific feedback on how to improve the resume further
+        7. Score the resume's match with the target job on a scale of 0-100
         
         IMPORTANT: You MUST respond with ONLY a valid JSON object and nothing else. No explanations, no markdown, no text before or after the JSON.
         
@@ -44,7 +48,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
         }
       `,
       system:
-        "You are an expert resume writer and career coach specializing in optimizing resumes for specific job targets. You provide detailed, actionable feedback and make strategic improvements to resumes. You ALWAYS respond with valid JSON only.",
+        "You are an expert resume writer and career coach specializing in optimizing resumes for specific job targets and matching provided templates. You provide detailed, actionable feedback and make strategic improvements to resumes. You ALWAYS respond with valid JSON only.",
     })
 
     // Try to parse the response as JSON
@@ -66,7 +70,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
 
       // If we still can't parse the JSON, make a second attempt with a more direct prompt
       const { text: retryText } = await generateText({
-        model: groqClient("deepseek-r1-distill-llama-70b"),
+        model: groqClient,
         prompt: `
           Convert the following resume data to an enhanced version for the target job.
           
@@ -75,6 +79,8 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
           
           TARGET JOB:
           ${jobTargetString}
+          
+          TEMPLATE: ${template}
           
           RESPOND ONLY WITH A VALID JSON OBJECT IN THIS EXACT FORMAT:
           {
@@ -101,8 +107,8 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
         }
       }
     }
-  } catch (error) {
-    console.error("Error enhancing resume:", error)
+  } catch (error: any) {
+    console.error("Error enhancing resume:", error instanceof Error ? error.message : error)
     // Return the original resume with an error message
     return {
       enhancedResume: resumeData,
@@ -123,7 +129,7 @@ export async function scoreResume(
 
     // Generate score and feedback using Groq
     const { text } = await generateText({
-      model: groqClient("deepseek-r1-distill-llama-70b"),
+      model: groqClient,
       prompt: `
         You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the target job and provide detailed feedback.
         
@@ -174,8 +180,8 @@ export async function scoreResume(
           "We encountered an issue scoring your resume. Please try again or make manual improvements based on the job description.",
       }
     }
-  } catch (error) {
-    console.error("Error scoring resume:", error)
+  } catch (error: any) {
+    console.error("Error scoring resume:", error instanceof Error ? error.message : error)
     return {
       score: 0,
       feedback: "We encountered an error while processing your resume. Please try again later.",
@@ -194,7 +200,7 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
 
     // Generate parsed resume using Groq with a more concise prompt
     const { text } = await generateText({
-      model: groqClient("deepseek-r1-distill-llama-70b"),
+      model: groqClient,
       prompt: `
         Extract structured information from this resume text and format it as JSON.
         
@@ -269,8 +275,8 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
       // If all else fails, try a simpler approach with just basic information
       return extractBasicResumeInfo(resumeText)
     }
-  } catch (error) {
-    console.error("Error parsing resume:", error)
+  } catch (error: any) {
+    console.error("Error parsing resume:", error instanceof Error ? error.message : error)
 
     // If we hit a token limit error, try the basic extraction approach
     if (error.toString().includes("token") || error.toString().includes("too large")) {

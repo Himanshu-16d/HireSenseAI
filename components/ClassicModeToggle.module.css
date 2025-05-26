@@ -1,0 +1,132 @@
+.centerer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.input {
+  display: none;
+}
+
+.label {
+  position: relative;
+  width: 64px;
+  height: 32px;
+  display: block;
+  background: linear-gradient(120deg, #ffe259 0%, #ffa751 100%);
+  border-radius: 32px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.5s;
+  overflow: hidden;
+}
+
+/* Sun (light mode) */
+.label .sun {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 20px;
+  height: 20px;
+  background: #ffe259;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px #fffbe6;
+  transition: left 0.5s, background 0.5s;
+  z-index: 2;
+}
+
+/* Clouds (light mode) */
+.label .clouds {
+  position: absolute;
+  left: 24px;
+  top: 16px;
+  width: 32px;
+  height: 12px;
+  background: #fff;
+  border-radius: 12px 12px 12px 12px;
+  box-shadow: 8px 0 0 0 #fff, 16px 0 0 0 #fff;
+  opacity: 1;
+  transition: opacity 0.5s;
+  z-index: 1;
+}
+
+/* Moon (dark mode) */
+.label .moon {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 20px;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 50%;
+  box-shadow: -4px 0 0 0 #b0b0b0;
+  opacity: 0;
+  transition: right 0.5s, opacity 0.5s;
+  z-index: 2;
+}
+
+/* Stars (dark mode) */
+.label .stars {
+  position: absolute;
+  right: 18px;
+  top: 10px;
+  width: 28px;
+  height: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 1;
+}
+.label .stars span {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+.label .stars .star1 {
+  width: 3px; height: 3px; left: 2px; top: 2px;
+}
+.label .stars .star2 {
+  width: 2px; height: 2px; left: 10px; top: 6px;
+}
+.label .stars .star3 {
+  width: 2.5px; height: 2.5px; left: 20px; top: 3px;
+}
+
+/* Toggle knob */
+.label:after {
+  content: '';
+  position: absolute;
+  height: 28px;
+  width: 28px;
+  background: transparent;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left 0.5s, background 0.5s;
+  z-index: 3;
+}
+
+/* DARK MODE: Move knob, show moon/stars, hide sun/clouds, change bg */
+.input:checked ~ .label {
+  background: linear-gradient(120deg, #232526 0%, #414345 100%);
+}
+.input:checked ~ .label:after {
+  left: 34px;
+  background: transparent;
+}
+.input:checked ~ .label .sun {
+  left: 38px;
+  background: #b0b0b0;
+  opacity: 0;
+}
+.input:checked ~ .label .clouds {
+  opacity: 0;
+}
+.input:checked ~ .label .moon {
+  right: 38px;
+  opacity: 1;
+}
+.input:checked ~ .label .stars {
+  opacity: 1;
+} 

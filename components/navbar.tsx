@@ -15,9 +15,8 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const { toast } = useToast()
 
-  const handleProtectedRoute = (e: React.MouseEvent) => {
+  const handleProtectedRoute = () => {
     if (!session) {
-      e.preventDefault()
       toast({
         title: "Sign in required",
         description: "Please sign in to access this feature",
@@ -33,31 +32,51 @@ export function Navbar() {
       transition={{ duration: 0.5 }}
       className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b shadow-sm"
     >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center px-4">
         {/* Left: Logo/Title */}
-        <div className="flex items-center gap-4 min-w-[180px]">
+        <div className="flex items-center w-[200px]">
           <Link href="/" className="text-2xl font-extrabold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent font-poppins tracking-tight">
             HireSenseAI
           </Link>
         </div>
+        
         {/* Center: Nav Links */}
-        <div className="hidden md:flex gap-8 flex-1 justify-center">
-          <Link href="/resume-builder" className={cn(
-            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-            pathname === "/resume-builder" && "text-primary font-semibold bg-primary/10"
-          )} onClick={handleProtectedRoute}>
-            Resume Builder
-          </Link>
-          <Link href="/job-finder" className={cn(
-            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-            pathname === "/job-finder" && "text-primary font-semibold bg-primary/10"
-          )} onClick={handleProtectedRoute}>
-            Job Finder
-          </Link>
+        <div className="hidden md:flex flex-1 items-center justify-center">
+          <nav className="flex space-x-8">
+            <Link 
+              href={session ? "/resume-builder" : "/login?redirect=/resume-builder"}
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/resume-builder" && "text-primary font-semibold bg-primary/10"
+              )}
+              onClick={() => !session && handleProtectedRoute()}
+            >
+              Resume Builder
+            </Link>
+            <Link 
+              href={session ? "/job-finder" : "/login?redirect=/job-finder"}
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/job-finder" && "text-primary font-semibold bg-primary/10"
+              )}
+              onClick={() => !session && handleProtectedRoute()}
+            >
+              Job Finder
+            </Link>
+            <Link 
+              href="/about" 
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/about" && "text-primary font-semibold bg-primary/10"
+              )}
+            >
+              About
+            </Link>
+          </nav>
         </div>
+        
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 min-w-[120px] justify-end">
-          <ModeToggle />
+        <div className="flex items-center gap-2 w-[200px] justify-end">
           {status === 'authenticated' ? (
             <UserNav />
           ) : (
@@ -67,21 +86,39 @@ export function Navbar() {
           )}
         </div>
       </div>
+
       {/* Mobile Nav */}
       <div className="flex md:hidden justify-center gap-4 pb-2">
-        <Link href="/resume-builder" className={cn(
-          "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-          pathname === "/resume-builder" && "text-primary font-semibold bg-primary/10"
-        )} onClick={handleProtectedRoute}>
+        <Link 
+          href={session ? "/resume-builder" : "/login?redirect=/resume-builder"}
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/resume-builder" && "text-primary font-semibold bg-primary/10"
+          )}
+          onClick={() => !session && handleProtectedRoute()}
+        >
           Resume Builder
         </Link>
-        <Link href="/job-finder" className={cn(
-          "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-          pathname === "/job-finder" && "text-primary font-semibold bg-primary/10"
-        )} onClick={handleProtectedRoute}>
+        <Link 
+          href={session ? "/job-finder" : "/login?redirect=/job-finder"}
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/job-finder" && "text-primary font-semibold bg-primary/10"
+          )}
+          onClick={() => !session && handleProtectedRoute()}
+        >
           Job Finder
+        </Link>
+        <Link 
+          href="/about"
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/about" && "text-primary font-semibold bg-primary/10"
+          )}
+        >
+          About
         </Link>
       </div>
     </motion.nav>
   )
-} 
+}

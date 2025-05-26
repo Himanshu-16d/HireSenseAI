@@ -22,7 +22,7 @@ export default function JobListingCard({ job }: JobListingCardProps) {
   }
 
   return (
-    <Card className="h-full flex flex-col hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
+    <Card className="h-full flex flex-col border-2">
       <CardHeader className="pb-2 space-y-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1.5">
