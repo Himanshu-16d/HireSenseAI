@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm install @radix-ui/react-checkbox && prisma generate && next build",
+    "build": "npm install --no-save @radix-ui/react-checkbox && prisma generate && next build",
     "start": "next start",
     "lint": "next lint"
   },
