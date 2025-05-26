@@ -7,7 +7,24 @@
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_APP_URL": "${VERCEL_URL}"
+      "NEXT_PUBLIC_APP_URL": "${VERCEL_URL}",
+      "PRISMA_GENERATE": "true"
     }
-  }
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 3008,
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/spline/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    }
+  ]
+}
 } 
