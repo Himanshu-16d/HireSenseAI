@@ -1,5 +1,5 @@
 // Client implementation inspired by Groq Python SDK
-const GROQ_API_URL = process.env.GROQ_API_URL || "https://api.groq.com/v1/chat/completions";
+const GROQ_API_URL = process.env.GROQ_API_URL || "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
 const DEFAULT_MODEL = process.env.DEFAULT_MODEL || "llama3-70b-8192";
 
