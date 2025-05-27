@@ -121,7 +121,7 @@ export default function ResumeBuilder() {
   const handleEnhanceResume = async () => {
     setIsLoading(true)
     try {
-      const result = await enhanceResume(resumeData, jobTarget)
+      const result = await enhanceResume(resumeData, jobTarget, selectedTemplate)
       setEnhancedResume(result.enhancedResume)
       setFeedback(result.feedback)
       setScore(result.score)

@@ -3,7 +3,7 @@
 import type { ResumeData, JobTarget, ResumeEnhancementResult } from "@/types/resume"
 import { callNvidiaAPI, MODELS } from "@/lib/nvidia-client"
 
-export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string): Promise<ResumeEnhancementResult> {
+export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string = "template1"): Promise<ResumeEnhancementResult> {
   try {
     const resumeString = JSON.stringify(resumeData, null, 2)
     const jobTargetString = JSON.stringify(jobTarget, null, 2)
@@ -70,10 +70,17 @@ export async function scoreResume(
   try {
     // Convert resume data to a string format for the AI
     const resumeString = JSON.stringify(resumeData, null, 2)
-    const jobTargetString = JSON.stringify(jobTarget, null, 2)    // Generate score and feedback using NVIDIA AI
-    const { text } = await generateText({
-      model: nvidiaClient,
-      prompt: `
+    const jobTargetString = JSON.stringify(jobTarget, null, 2)
+    
+    // Generate score and feedback using NVIDIA AI
+    const response = await callNvidiaAPI([
+      { 
+        role: "system", 
+        content: "You are an expert resume reviewer and ATS specialist who provides accurate scoring and actionable feedback. You ALWAYS respond with valid JSON only."
+      },
+      {
+        role: "user",
+        content: `
         You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the target job and provide detailed feedback.
         
         RESUME DATA:
@@ -94,10 +101,11 @@ export async function scoreResume(
           "score": 75, // Score from 0-100
           "feedback": "Detailed feedback with specific suggestions for improvement"
         }
-      `,
-      system:
-        "You are an expert resume reviewer and ATS specialist who provides accurate scoring and actionable feedback. You ALWAYS respond with valid JSON only.",
-    })
+        `
+      }
+    ], MODELS.JOB_MATCHING)
+
+    const text = response.choices[0].message.content
 
     // Try to parse the response as JSON
     try {

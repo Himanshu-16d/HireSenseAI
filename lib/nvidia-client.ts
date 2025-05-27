@@ -1,12 +1,13 @@
 const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v2/chat/completions";
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
-const DEFAULT_MODEL = "mixtral_8x7b";
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || "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";
+const DEFAULT_MODEL = "deepseek/deepseek-r1";
 
 // Debug logging for deployment troubleshooting
 if (process.env.NODE_ENV === 'production') {
   console.log('NVIDIA API Configuration:');
   console.log('API URL:', NVIDIA_API_URL);
   console.log('API Key exists:', !!NVIDIA_API_KEY);
+  console.log('Model:', DEFAULT_MODEL);
 }
 
 if (!NVIDIA_API_KEY) {
@@ -77,11 +78,11 @@ export async function callNvidiaAPI(messages: { role: string; content: string }[
 
 // Model configuration
 export const MODELS = {
-  RESUME_ANALYSIS: "mixtral_8x7b",
-  JOB_MATCHING: "mixtral_8x7b",
-  COVER_LETTER: "mixtral_8x7b",
-  SKILL_ANALYSIS: "mixtral_8x7b",
-  REALTIME_MATCHING: "mixtral_8x7b"
+  RESUME_ANALYSIS: "deepseek/deepseek-r1",
+  JOB_MATCHING: "deepseek/deepseek-r1",
+  COVER_LETTER: "deepseek/deepseek-r1",
+  SKILL_ANALYSIS: "deepseek/deepseek-r1",
+  REALTIME_MATCHING: "deepseek/deepseek-r1"
 } as const
 
 // Real-time analysis function
