@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getRealtimeFeedback } from "@/actions/realtime-feedback";
+import { validateApiConfig } from "@/middleware/api-validation";
 
-export async function POST(request: Request) {  try {
+export async function POST(request: Request) {
+  // Validate API configuration
+  const validationError = await validateApiConfig();
+  if (validationError) return validationError;try {
     const { resumeData, jobDescription } = await request.json();
     const result = await getRealtimeFeedback(resumeData, jobDescription);
     return NextResponse.json(result);

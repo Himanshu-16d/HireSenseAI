@@ -1,6 +1,13 @@
-const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v1/chat/completions";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v2/chat/completions";
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const DEFAULT_MODEL = "mixtral_8x7b";
+
+// Debug logging for deployment troubleshooting
+if (process.env.NODE_ENV === 'production') {
+  console.log('NVIDIA API Configuration:');
+  console.log('API URL:', NVIDIA_API_URL);
+  console.log('API Key exists:', !!NVIDIA_API_KEY);
+}
 
 if (!NVIDIA_API_KEY) {
   console.warn("NVIDIA_API_KEY is not defined in environment variables");
@@ -28,9 +35,7 @@ export async function callNvidiaAPI(messages: { role: string; content: string }[
         stream: false,
         model
       })
-    });
-
-    if (!response.ok) {
+    });    if (!response.ok) {
       const errorText = await response.text();
       let errorJson: NvidiaError | null = null;
       
@@ -38,6 +43,17 @@ export async function callNvidiaAPI(messages: { role: string; content: string }[
         errorJson = JSON.parse(errorText);
       } catch (e) {
         // If not JSON, use text as is
+      }
+
+      // Log detailed error information in production
+      if (process.env.NODE_ENV === 'production') {
+        console.error('NVIDIA API Error:', {
+          status: response.status,
+          url: NVIDIA_API_URL,
+          errorText,
+          errorJson,
+          headers: Object.fromEntries(response.headers.entries())
+        });
       }
 
       const errorMessage = errorJson?.message || errorText;
