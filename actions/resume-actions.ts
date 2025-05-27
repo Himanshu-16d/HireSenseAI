@@ -1,64 +1,72 @@
 "use server"
 
 import type { ResumeData, JobTarget, ResumeEnhancementResult } from "@/types/resume"
-import { callNvidiaAPI, MODELS } from "@/lib/nvidia-client"
+import {
+  MODELS,
+  RESUME_ANALYSIS_PROMPT,
+  JOB_MATCHING_PROMPT,
+  COVER_LETTER_PROMPT,
+  callGroqAPI,
+  processInParallel
+} from "@/lib/groq-client"
 
 export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string = "template1"): Promise<ResumeEnhancementResult> {
   try {
     const resumeString = JSON.stringify(resumeData, null, 2)
     const jobTargetString = JSON.stringify(jobTarget, null, 2)
 
-    const response = await callNvidiaAPI([
+    // Get headers from request context
+    const { headers } = (process as any).experimental?.invokeHeaders() || { headers: undefined }
+
+    const response = await callGroqAPI([
       {
         role: "system",
-        content: "You are an expert resume writer and career coach specializing in optimizing resumes for specific job targets and matching provided templates. You provide detailed, actionable feedback and make strategic improvements to resumes. You ALWAYS respond with valid JSON only.",
+        content: "You are an expert resume enhancer who tailors resumes to specific job targets."
       },
       {
         role: "user",
         content: `
-        Enhance the following resume to make it more effective for the target job.
-        
-        RESUME DATA:
-        ${resumeString}
-        
-        TARGET JOB:
-        ${jobTargetString}
-        
-        TEMPLATE: ${template}
-        
-        Please analyze the resume and the target job, then:
-        1. Enhance the resume content to better align with the target job
-        2. Improve the wording and impact of bullet points
-        3. Highlight relevant skills and experiences
-        4. Structure the resume to match the exact sections, order, and color style of the template named '${template}'.
-        5. Use the same topics, section placement, and color scheme as the template.
-        6. Provide specific feedback on how to improve the resume further
-        7. Score the resume's match with the target job on a scale of 0-100
-        
-        Return ONLY a valid JSON object with this structure:
-        {
-          "enhancedResume": {
-            // Enhanced resume data with the same structure as the input
-          },
-          "feedback": "Detailed feedback with specific suggestions for improvement",
-          "score": 75 // Score from 0-100
-        }`,
-      },
-    ], MODELS.RESUME_ANALYSIS)
+          Enhance this resume to better match the target job:
 
-    const result = response.choices[0]?.message?.content
-    if (!result) {
-      throw new Error("Invalid response from AI service")
+          RESUME:
+          ${resumeString}
+
+          TARGET JOB:
+          ${jobTargetString}
+
+          TEMPLATE: ${template}
+
+          Please provide:
+          1. The enhanced resume JSON
+          2. Brief feedback on the changes made
+          3. A match score from 0-100
+
+          Return as JSON with the following structure:
+          {
+            "enhancedResume": {...},
+            "feedback": "string with feedback",
+            "score": number
+          }
+        `
+      }
+    ], MODELS.RESUME_ANALYSIS, headers)
+
+    const content = response.choices[0]?.message?.content
+    
+    if (!content) {
+      throw new Error("Invalid response from AI")
     }
 
-    try {
-      return JSON.parse(result)
-    } catch (parseError) {
-      console.error("Error parsing AI response:", parseError)
-      throw new Error("Failed to process resume enhancement")
+    // Parse the JSON response
+    const result = JSON.parse(content)
+    
+    return {
+      enhancedResume: result.enhancedResume,
+      feedback: result.feedback,
+      score: result.score
     }
   } catch (error) {
-    console.error("Resume enhancement error:", error)
+    console.error("Error enhancing resume:", error)
     throw error
   }
 }
@@ -72,8 +80,11 @@ export async function scoreResume(
     const resumeString = JSON.stringify(resumeData, null, 2)
     const jobTargetString = JSON.stringify(jobTarget, null, 2)
     
-    // Generate score and feedback using NVIDIA AI
-    const response = await callNvidiaAPI([
+    // Get headers from request context
+    const { headers } = (process as any).experimental?.invokeHeaders() || { headers: undefined }
+    
+    // Generate score and feedback using Groq AI
+    const response = await callGroqAPI([
       { 
         role: "system", 
         content: "You are an expert resume reviewer and ATS specialist who provides accurate scoring and actionable feedback. You ALWAYS respond with valid JSON only."
@@ -81,62 +92,51 @@ export async function scoreResume(
       {
         role: "user",
         content: `
-        You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the target job and provide detailed feedback.
+        You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the specified job target and provide detailed feedback.
         
-        RESUME DATA:
+        RESUME:
         ${resumeString}
         
-        TARGET JOB:
+        JOB TARGET:
         ${jobTargetString}
         
-        Please analyze the resume and the target job, then:
-        1. Score the resume's match with the target job on a scale of 0-100
-        2. Provide detailed feedback on the resume's strengths and weaknesses
-        3. Suggest specific improvements to increase the score
+        Analyze this resume and provide:
+        1. A compatibility score from 0-100 based on how well the resume matches the job target
+        2. Detailed feedback on how to improve the resume for this specific job
         
-        IMPORTANT: You MUST respond with ONLY a valid JSON object and nothing else. No explanations, no markdown, no text before or after the JSON.
+        Focus on:
+        - Skills matching
+        - Experience relevance
+        - Keyword optimization
+        - ATS compatibility
+        - Overall presentation
         
-        The JSON must have the following structure:
+        Return your analysis as JSON with the following structure:
         {
-          "score": 75, // Score from 0-100
-          "feedback": "Detailed feedback with specific suggestions for improvement"
+          "score": number,
+          "feedback": "string with detailed feedback"
         }
         `
       }
-    ], MODELS.JOB_MATCHING)
-
-    const text = response.choices[0].message.content
-
-    // Try to parse the response as JSON
-    try {
-      // First, try to parse the response directly
-      return JSON.parse(text) as { score: number; feedback: string }
-    } catch (parseError) {
-      console.error("Failed to parse initial response:", parseError)
-
-      // Try to extract JSON from the response if it contains other text
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        try {
-          return JSON.parse(jsonMatch[0]) as { score: number; feedback: string }
-        } catch (extractError) {
-          console.error("Failed to extract JSON from response:", extractError)
-        }
-      }
-
-      // If all else fails, return a generic response
-      return {
-        score: 50,
-        feedback:
-          "We encountered an issue scoring your resume. Please try again or make manual improvements based on the job description.",
-      }
+    ], MODELS.JOB_MATCHING, headers)
+    
+    // Extract the AI response content
+    const content = response.choices[0]?.message?.content
+    
+    if (!content) {
+      throw new Error("Invalid response from AI")
     }
-  } catch (error: any) {
-    console.error("Error scoring resume:", error instanceof Error ? error.message : error)
+    
+    // Parse the JSON response
+    const result = JSON.parse(content)
+    
     return {
-      score: 0,
-      feedback: "We encountered an error while processing your resume. Please try again later.",
+      score: result.score,
+      feedback: result.feedback
     }
+  } catch (error) {
+    console.error("Error scoring resume:", error)
+    throw error
   }
 }
 
@@ -147,8 +147,8 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
     const truncatedText = truncateResumeText(resumeText, 4000)
     console.log(`Original resume length: ${resumeText.length}, Truncated length: ${truncatedText.length}`)
 
-    // Generate parsed resume using NVIDIA AI
-    const response = await callNvidiaAPI([
+    // Generate parsed resume using Groq AI
+    const response = await callGroqAPI([
       { 
         role: "system", 
         content: "You are a resume parser that extracts key information from resumes. Be concise and focus on the most important details." 

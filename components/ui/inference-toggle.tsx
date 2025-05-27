@@ -33,7 +33,7 @@ export function InferenceToggle() {
         onCheckedChange={handleToggle}
       />
       <Label htmlFor="inference-toggle" className="text-sm">
-        {isLocal ? "Using Local Inference" : "Using NVIDIA API"}
+        {isLocal ? "Using Local Inference" : "Using Groq API"}
       </Label>
     </div>
   )

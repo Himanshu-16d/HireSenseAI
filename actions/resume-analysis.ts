@@ -1,6 +1,6 @@
 "use server"
 
-import { callNvidiaAPI, MODELS } from "@/lib/nvidia-client"
+import { callGroqAPI, MODELS } from "@/lib/groq-client"
 import type { ResumeAnalysis } from "@/types/resume"
 
 export interface CompanyDetails {
@@ -88,8 +88,8 @@ export async function generateJobDescription(
   jobDetails: JobDetails
 ): Promise<GeneratedJobDescription> {
   try {
-    if (!process.env.NVIDIA_API_KEY) {
-      console.warn("NVIDIA_API_KEY is not configured, using default job description");
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("GROQ_API_KEY is not configured, using default job description");
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
 
@@ -109,7 +109,7 @@ export async function generateJobDescription(
 
     while (attempts < maxRetries) {
       try {
-        const response = await callNvidiaAPI([
+        const response = await callGroqAPI([
           {
             role: "system",
             content: "You are an expert HR professional who creates compelling job descriptions that are modern, engaging, and optimized for candidates in the technology industry."
@@ -163,7 +163,7 @@ Return ONLY a valid JSON object with this structure:
     }
 
     if (!result) {
-      console.error("Empty response from NVIDIA API");
+      console.error("Empty response from Groq API");
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
 
@@ -175,7 +175,7 @@ Return ONLY a valid JSON object with this structure:
       }
       return parsed;
     } catch (parseError) {
-      console.error("Error parsing NVIDIA API response:", parseError);
+      console.error("Error parsing Groq API response:", parseError);
       return createDefaultJobDescription(jobDetails, companyDetails);
     }
   } catch (error) {
@@ -193,7 +193,7 @@ export interface CoverLetterRequest {
 
 export async function generateCoverLetter(request: CoverLetterRequest): Promise<string> {
   try {
-    const response = await callNvidiaAPI([
+    const response = await callGroqAPI([
       {
         role: "system",
         content: "You are an expert career coach who writes compelling cover letters. Always respond with plain text only, no markdown or formatting."
@@ -224,7 +224,7 @@ Return the cover letter as plain text only, with no additional formatting.`
 
     const result = response.choices[0]?.message?.content;
     if (!result) {
-      throw new Error("No response from NVIDIA API");
+      throw new Error("No response from Groq API");
     }
 
     return result.trim()
@@ -239,7 +239,7 @@ Return the cover letter as plain text only, with no additional formatting.`
 
 export async function analyzeResume(resumeText: string): Promise<ResumeAnalysis> {
   try {
-    const response = await callNvidiaAPI([
+    const response = await callGroqAPI([
       {
         role: "system",
         content: "You are an expert resume reviewer with years of experience in HR and recruitment. Always respond with valid JSON only."
@@ -263,7 +263,7 @@ Return ONLY a valid JSON object with this structure:
 
     const result = response.choices[0]?.message?.content;
     if (!result) {
-      throw new Error("No response from NVIDIA API");
+      throw new Error("No response from Groq API");
     }
 
     const parsedResult = JSON.parse(result);

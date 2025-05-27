@@ -4,8 +4,9 @@
   "installCommand": "pnpm install --no-frozen-lockfile",  "env": {
     "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
     "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
-    "NVIDIA_API_URL": "https://api.nvcf.nvidia.com/v1/chat/completions",
-    "NVIDIA_API_KEY": "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",
+    "GROQ_API_URL": "https://api.groq.com/v1/chat/completions",
+    "GROQ_API_KEY": "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",
+    "DEFAULT_MODEL": "llama3-70b-8192",
     "USE_LOCAL_INFERENCE": "false",
     "NODE_ENV": "production"
   },
@@ -14,8 +15,9 @@
       "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
       "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
       "PRISMA_GENERATE": "true",
-      "NVIDIA_API_URL": "https://api.nvcf.nvidia.com/v1/chat/completions",
-      "NVIDIA_API_KEY": "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",
+      "GROQ_API_URL": "https://api.groq.com/v1/chat/completions",
+      "GROQ_API_KEY": "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",
+      "DEFAULT_MODEL": "llama3-70b-8192",
       "USE_LOCAL_INFERENCE": "false",
       "NODE_ENV": "production"
     }

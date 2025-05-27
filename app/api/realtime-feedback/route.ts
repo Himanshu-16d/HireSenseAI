@@ -15,14 +15,14 @@ export async function POST(request: Request) {
     // Handle specific API errors
     if (error.status === 404) {
       return NextResponse.json(
-        { error: "NVIDIA API endpoint not found. Please check API configuration." },
+        { error: "Groq API endpoint not found. Please check API configuration." },
         { status: 404 }
       );
     }
 
     if (error.status === 401) {
       return NextResponse.json(
-        { error: "Invalid NVIDIA API key. Please check your credentials." },
+        { error: "Invalid Groq API key. Please check your credentials." },
         { status: 401 }
       );
     }

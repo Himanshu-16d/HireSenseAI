@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
-// NVIDIA API credentials from environment variables
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
-const NVIDIA_API_URL = process.env.NVIDIA_API_URL;
+// Groq API credentials from environment variables
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_API_URL = process.env.GROQ_API_URL;
+const DEFAULT_MODEL = process.env.DEFAULT_MODEL || "llama3-70b-8192";
 
 // Adzuna API credentials
 const APP_ID = process.env.ADZUNA_APP_ID || '';
@@ -14,8 +15,8 @@ let cachedData: any = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
-// Define interface for NVIDIA API response
-interface NvidiaApiResponse {
+// Define interface for Groq API response
+interface GroqApiResponse {
   choices?: Array<{
     message?: {
       content?: string;
@@ -49,7 +50,7 @@ export async function GET() {
     const categoriesData = await categoriesResponse.json();
     const locationsData = await locationsResponse.json();
 
-    // Use NVIDIA API to analyze the job market data and generate insights
+    // Use Groq API to analyze the job market data and generate insights
     const payload = {
       messages: [
         {
@@ -76,21 +77,25 @@ export async function GET() {
       max_tokens: 1000,
     };
 
-    const aiResponse = await fetch(NVIDIA_API_URL, {
+    if (!GROQ_API_URL) {
+      throw new Error('Groq API URL is not defined');
+    }
+
+    const aiResponse = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
 
     if (!aiResponse.ok) {
-      throw new Error(`NVIDIA API call failed: ${aiResponse.status} ${await aiResponse.text()}`);
+      throw new Error(`Groq API call failed: ${aiResponse.status} ${await aiResponse.text()}`);
     }
 
     // Parse the AI-generated insights
-    const aiData = await aiResponse.json() as NvidiaApiResponse;
+    const aiData = await aiResponse.json() as GroqApiResponse;
     const aiContent = aiData.choices?.[0]?.message?.content || '';
     let parsedInsights;
     

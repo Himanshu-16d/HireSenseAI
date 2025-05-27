@@ -9,6 +9,7 @@ import { useSession, signIn } from 'next-auth/react'
 import { useToast } from '@/components/ui/use-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { InferenceToggle } from '@/components/ui/inference-toggle'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -86,7 +87,8 @@ export function Navbar() {
         </div>
         
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 w-[200px] justify-end">
+        <div className="flex items-center gap-4 w-auto justify-end">
+          <InferenceToggle />
           {status === 'authenticated' ? (
             <UserNav />
           ) : (

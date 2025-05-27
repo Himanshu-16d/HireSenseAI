@@ -1,5 +1,5 @@
 "use server";
-import { callNvidiaAPI } from "@/lib/nvidia-client";
+import { callGroqAPI } from "@/lib/groq-client";
 
 export async function generateFieldContent({
   field,
@@ -30,7 +30,7 @@ export async function generateFieldContent({
   } else if (field === "achievements") {
     prompt = `Given this work experience, return ONLY a concise, comma-separated list of a maximum of 3 key achievements or impact statements. Do NOT include any explanation, introduction, or extra text. No markdown, no bullet points, no sentences, just the list. Example: Increased sales by 20%, Led a team of 5, ...\n${JSON.stringify(experience)}\n`;
   }
-  const response = await callNvidiaAPI([
+  const response = await callGroqAPI([
     { role: "system", content: "You are an expert resume writer and career coach." },
     { role: "user", content: prompt }
   ], "deepseek-ai/deepseek-r1");
