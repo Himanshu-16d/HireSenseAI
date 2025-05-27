@@ -7,7 +7,8 @@ import {
   JOB_MATCHING_PROMPT,
   COVER_LETTER_PROMPT,
   callGroqAPI,
-  processInParallel
+  processInParallel,
+  cleanResponseText
 } from "@/lib/groq-client"
 
 export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string = "template1"): Promise<ResumeEnhancementResult> {
@@ -21,7 +22,7 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
     const response = await callGroqAPI([
       {
         role: "system",
-        content: "You are an expert resume enhancer who tailors resumes to specific job targets."
+        content: "You are an expert resume enhancer who tailors resumes to specific job targets. Return only the exact JSON output as requested without any additional text, prefixes, or explanations."
       },
       {
         role: "user",
@@ -57,8 +58,9 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
       throw new Error("Invalid response from AI")
     }
 
-    // Parse the JSON response
-    const result = JSON.parse(content)
+    // Clean and parse the JSON response
+    const cleanedContent = cleanResponseText(content)
+    const result = JSON.parse(cleanedContent)
     
     return {
       enhancedResume: result.enhancedResume,
@@ -87,7 +89,7 @@ export async function scoreResume(
     const response = await callGroqAPI([
       { 
         role: "system", 
-        content: "You are an expert resume reviewer and ATS specialist who provides accurate scoring and actionable feedback. You ALWAYS respond with valid JSON only."
+        content: "You are an expert resume reviewer and ATS specialist who provides accurate scoring and actionable feedback. You ALWAYS respond with valid JSON only. Return only the exact JSON output as requested without any additional text, prefixes, or explanations."
       },
       {
         role: "user",
@@ -127,8 +129,9 @@ export async function scoreResume(
       throw new Error("Invalid response from AI")
     }
     
-    // Parse the JSON response
-    const result = JSON.parse(content)
+    // Clean and parse the JSON response
+    const cleanedContent = cleanResponseText(content)
+    const result = JSON.parse(cleanedContent)
     
     return {
       score: result.score,
@@ -151,7 +154,7 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
     const response = await callGroqAPI([
       { 
         role: "system", 
-        content: "You are a resume parser that extracts key information from resumes. Be concise and focus on the most important details." 
+        content: "You are a resume parser that extracts key information from resumes. Be concise and focus on the most important details. Return only the exact JSON output as requested without any additional text, prefixes, or explanations." 
       },
       {
         role: "user",
@@ -160,13 +163,15 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
     ], MODELS.RESUME_ANALYSIS)
     
     const text = response.choices[0].message.content
+    const cleanedText = cleanResponseText(text)
 
     // Try to parse the response as JSON
     try {
-      return JSON.parse(text) as ResumeData
+      return JSON.parse(cleanedText) as ResumeData
     } catch (parseError) {
-      console.error("Failed to parse initial response:", parseError)
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      console.error("Failed to parse cleaned response:", parseError)
+      // Try to extract JSON if the response contains markdown code blocks
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         try {
           return JSON.parse(jsonMatch[0]) as ResumeData
@@ -364,5 +369,44 @@ function getDefaultResumeData(): ResumeData {
         link: "",
       },
     ],
+  }
+}
+
+export async function analyzeFeedback(resumeData: any) {
+  // Generate score and feedback using Groq AI
+  const prompt = RESUME_ANALYSIS_PROMPT.replace("{resumeData}", JSON.stringify(resumeData))
+  
+  const response = await callGroqAPI([
+    {
+      role: "system",
+      content: "You are an ATS resume analyzer. Return only the exact JSON output as requested without any additional text, prefixes, or explanations."
+    },
+    {
+      role: "user",
+      content: prompt
+    }
+  ], MODELS.RESUME_ANALYSIS);
+
+  try {
+    const responseContent = response.choices[0]?.message?.content || "{}";
+    const cleanedContent = cleanResponseText(responseContent);
+    
+    // Parse as JSON
+    return JSON.parse(cleanedContent);
+  } catch (e) {
+    console.error("Error parsing response:", e);
+    return {
+      score: 0,
+      strengths: [],
+      improvements: [],
+      keywords: [],
+      recommendations: [],
+      atsSpecificFeedback: {
+        formatting: [],
+        keywords: [],
+        structure: [],
+        compatibility: 0
+      }
+    };
   }
 }

@@ -1,5 +1,5 @@
 "use server";
-import { callGroqAPI } from "@/lib/groq-client";
+import { callGroqAPI, cleanResponseText } from "@/lib/groq-client";
 
 export async function generateFieldContent({
   field,
@@ -31,8 +31,11 @@ export async function generateFieldContent({
     prompt = `Given this work experience, return ONLY a concise, comma-separated list of a maximum of 3 key achievements or impact statements. Do NOT include any explanation, introduction, or extra text. No markdown, no bullet points, no sentences, just the list. Example: Increased sales by 20%, Led a team of 5, ...\n${JSON.stringify(experience)}\n`;
   }
   const response = await callGroqAPI([
-    { role: "system", content: "You are an expert resume writer and career coach." },
+    { role: "system", content: "You are an expert resume writer and career coach. Always respond directly with the content requested without any prefixes, quotes, or explanations." },
     { role: "user", content: prompt }
   ], "llama3-70b-8192");
-  return response.choices[0]?.message?.content?.trim() || "";
+  
+  // Clean the response text
+  const rawContent = response.choices[0]?.message?.content?.trim() || "";
+  return cleanResponseText(rawContent);
 } 

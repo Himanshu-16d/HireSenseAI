@@ -3,6 +3,50 @@ const GROQ_API_URL = process.env.GROQ_API_URL || "https://api.groq.com/openai/v1
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
 const DEFAULT_MODEL = process.env.DEFAULT_MODEL || "llama3-70b-8192";
 
+// Function to clean response text from common prefixes and formatting
+export function cleanResponseText(text: string): string {
+  if (!text) return "";
+  
+  // Remove common prefixes
+  const prefixesToRemove = [
+    "Here is a possible job description:",
+    "Here is a job description:",
+    "Here's a job description:",
+    "Here is the job description:",
+    "Job Description:",
+    "Here's a possible summary:",
+    "Here is a summary:",
+    "Summary:",
+    "Here's a description:",
+    "Description:",
+    "Here are the skills:",
+    "Skills:",
+    "Here are the technologies:",
+    "Technologies:",
+    "Here are the achievements:",
+    "Achievements:",
+    "Project Description:",
+    "Experience Description:"
+  ];
+  
+  let cleanedText = text.trim();
+  
+  // Remove prefixes
+  for (const prefix of prefixesToRemove) {
+    if (cleanedText.startsWith(prefix)) {
+      cleanedText = cleanedText.substring(prefix.length).trim();
+    }
+  }
+  
+  // Remove surrounding quotes if present
+  if ((cleanedText.startsWith('"') && cleanedText.endsWith('"')) || 
+      (cleanedText.startsWith("'") && cleanedText.endsWith("'"))) {
+    cleanedText = cleanedText.substring(1, cleanedText.length - 1).trim();
+  }
+  
+  return cleanedText;
+}
+
 // Default to environment variable, but can be overridden by request headers
 let USE_LOCAL_INFERENCE = process.env.USE_LOCAL_INFERENCE === "true";
 
@@ -249,7 +293,7 @@ Return as JSON with the following structure:
   const response = await callGroqAPI([
     {
       role: "system",
-      content: "You are a real-time resume analysis expert providing instant feedback."
+      content: "You are a real-time resume analysis expert providing instant feedback. Return only the exact JSON output as requested without any additional text, prefixes, or explanations."
     },
     {
       role: "user",
@@ -261,7 +305,38 @@ Return as JSON with the following structure:
     top_p: 1
   });
 
-  return JSON.parse(response.choices[0]?.message?.content || "{}");
+  // Parse and clean response
+  const responseContent = response.choices[0]?.message?.content || "{}";
+  let cleanedContent = cleanResponseText(responseContent);
+  
+  // Make sure we have valid JSON
+  try {
+    return JSON.parse(cleanedContent);
+  } catch (e) {
+    console.error("Failed to parse JSON response:", e);
+    console.log("Raw response:", responseContent);
+    console.log("Cleaned response:", cleanedContent);
+    
+    // Attempt to fix common JSON parsing issues
+    try {
+      // Try to extract JSON if wrapped in backticks
+      if (cleanedContent.includes("```json") && cleanedContent.includes("```")) {
+        cleanedContent = cleanedContent.split("```json")[1].split("```")[0].trim();
+      } else if (cleanedContent.includes("```") && cleanedContent.includes("```")) {
+        cleanedContent = cleanedContent.split("```")[1].split("```")[0].trim();
+      }
+      return JSON.parse(cleanedContent);
+    } catch (e2) {
+      // Return a default response if parsing fails
+      return {
+        skillMatch: 0,
+        suggestions: ["Error parsing response"],
+        atsScore: 0,
+        keywords: [],
+        instantFeedback: "Error analyzing resume"
+      };
+    }
+  }
 }
 
 // Utility function for parallel processing
