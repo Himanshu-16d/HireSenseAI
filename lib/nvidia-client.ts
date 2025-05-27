@@ -31,7 +31,7 @@ export async function callNvidiaAPI(messages: { role: string; content: string }[
       },      body: JSON.stringify({
         messages,
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 1500,
         top_p: 1,
         stream: false,
         model
