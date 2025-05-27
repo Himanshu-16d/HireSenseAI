@@ -57,10 +57,10 @@ This project combines the power of AI and real-time data to streamline the job s
 
 ## API Reference
 
-1.Groq  
-2.Linkedin  
-3.Goggle  
-4.Railway
+1. NVIDIA AI Foundation Models
+2. LinkedIn
+3. Google
+4. Railway
 ## Authors
 
 1. Himanshu Dubey   

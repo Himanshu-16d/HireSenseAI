@@ -1,23 +1,22 @@
 "use server"
 
-import { generateText } from "ai"
-import { groq } from "@ai-sdk/groq"
 import type { ResumeData, JobTarget, ResumeEnhancementResult } from "@/types/resume"
-
-// Initialize Groq client with API key
-const groqClient = groq(process.env.GROQ_API_KEY!)
+import { callNvidiaAPI, MODELS } from "@/lib/nvidia-client"
 
 export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string): Promise<ResumeEnhancementResult> {
   try {
-    // Convert resume data to a string format for the AI
     const resumeString = JSON.stringify(resumeData, null, 2)
     const jobTargetString = JSON.stringify(jobTarget, null, 2)
 
-    // Generate enhanced resume using Groq
-    const { text } = await generateText({
-      model: groqClient,
-      prompt: `
-        You are an expert resume writer and career coach. Your task is to enhance the following resume to make it more effective for the target job.
+    const response = await callNvidiaAPI([
+      {
+        role: "system",
+        content: "You are an expert resume writer and career coach specializing in optimizing resumes for specific job targets and matching provided templates. You provide detailed, actionable feedback and make strategic improvements to resumes. You ALWAYS respond with valid JSON only.",
+      },
+      {
+        role: "user",
+        content: `
+        Enhance the following resume to make it more effective for the target job.
         
         RESUME DATA:
         ${resumeString}
@@ -36,85 +35,31 @@ export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget
         6. Provide specific feedback on how to improve the resume further
         7. Score the resume's match with the target job on a scale of 0-100
         
-        IMPORTANT: You MUST respond with ONLY a valid JSON object and nothing else. No explanations, no markdown, no text before or after the JSON.
-        
-        The JSON must have the following structure:
+        Return ONLY a valid JSON object with this structure:
         {
           "enhancedResume": {
             // Enhanced resume data with the same structure as the input
           },
           "feedback": "Detailed feedback with specific suggestions for improvement",
           "score": 75 // Score from 0-100
-        }
-      `,
-      system:
-        "You are an expert resume writer and career coach specializing in optimizing resumes for specific job targets and matching provided templates. You provide detailed, actionable feedback and make strategic improvements to resumes. You ALWAYS respond with valid JSON only.",
-    })
+        }`,
+      },
+    ], MODELS.RESUME_ANALYSIS)
 
-    // Try to parse the response as JSON
+    const result = response.choices[0]?.message?.content
+    if (!result) {
+      throw new Error("Invalid response from AI service")
+    }
+
     try {
-      // First, try to parse the response directly
-      return JSON.parse(text) as ResumeEnhancementResult
+      return JSON.parse(result)
     } catch (parseError) {
-      console.error("Failed to parse initial response:", parseError)
-
-      // Try to extract JSON from the response if it contains other text
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        try {
-          return JSON.parse(jsonMatch[0]) as ResumeEnhancementResult
-        } catch (extractError) {
-          console.error("Failed to extract JSON from response:", extractError)
-        }
-      }
-
-      // If we still can't parse the JSON, make a second attempt with a more direct prompt
-      const { text: retryText } = await generateText({
-        model: groqClient,
-        prompt: `
-          Convert the following resume data to an enhanced version for the target job.
-          
-          RESUME DATA:
-          ${resumeString}
-          
-          TARGET JOB:
-          ${jobTargetString}
-          
-          TEMPLATE: ${template}
-          
-          RESPOND ONLY WITH A VALID JSON OBJECT IN THIS EXACT FORMAT:
-          {
-            "enhancedResume": ${resumeString},
-            "feedback": "Brief feedback here",
-            "score": 70
-          }
-          
-          DO NOT include any text before or after the JSON. ONLY return the JSON object.
-        `,
-        system: "You are a JSON formatting assistant. You only respond with valid JSON objects and nothing else.",
-      })
-
-      try {
-        return JSON.parse(retryText) as ResumeEnhancementResult
-      } catch (retryError) {
-        // If all else fails, return the original resume with generic feedback
-        console.error("Failed to parse retry response:", retryError)
-        return {
-          enhancedResume: resumeData,
-          feedback:
-            "We encountered an issue enhancing your resume. Please try again or make manual improvements based on the job description.",
-          score: 50,
-        }
-      }
+      console.error("Error parsing AI response:", parseError)
+      throw new Error("Failed to process resume enhancement")
     }
-  } catch (error: any) {
-    console.error("Error enhancing resume:", error instanceof Error ? error.message : error)
-    // Return the original resume with an error message
-    return {
-      enhancedResume: resumeData,
-      feedback: "We encountered an error while processing your resume. Please try again later.",
-      score: 0,
-    }
+  } catch (error) {
+    console.error("Resume enhancement error:", error)
+    throw error
   }
 }
 
@@ -125,11 +70,9 @@ export async function scoreResume(
   try {
     // Convert resume data to a string format for the AI
     const resumeString = JSON.stringify(resumeData, null, 2)
-    const jobTargetString = JSON.stringify(jobTarget, null, 2)
-
-    // Generate score and feedback using Groq
+    const jobTargetString = JSON.stringify(jobTarget, null, 2)    // Generate score and feedback using NVIDIA AI
     const { text } = await generateText({
-      model: groqClient,
+      model: nvidiaClient,
       prompt: `
         You are an expert resume reviewer and ATS (Applicant Tracking System) specialist. Your task is to score the following resume for the target job and provide detailed feedback.
         
@@ -193,76 +136,28 @@ export async function scoreResume(
 export async function parseResume(resumeText: string): Promise<ResumeData> {
   try {
     // Truncate the resume text to avoid token limit errors
-    // Approximately 3000 tokens is around 4000-5000 characters for English text
     const truncatedText = truncateResumeText(resumeText, 4000)
-
     console.log(`Original resume length: ${resumeText.length}, Truncated length: ${truncatedText.length}`)
 
-    // Generate parsed resume using Groq with a more concise prompt
-    const { text } = await generateText({
-      model: groqClient,
-      prompt: `
-        Extract structured information from this resume text and format it as JSON.
-        
-        RESUME TEXT:
-        ${truncatedText}
-        
-        Return ONLY a JSON object with this structure:
-        {
-          "personalInfo": {
-            "name": "",
-            "email": "",
-            "phone": "",
-            "location": "",
-            "linkedin": "",
-            "website": ""
-          },
-          "summary": "",
-          "experience": [
-            {
-              "title": "",
-              "company": "",
-              "location": "",
-              "startDate": "",
-              "endDate": "",
-              "description": "",
-              "achievements": [""]
-            }
-          ],
-          "education": [
-            {
-              "degree": "",
-              "institution": "",
-              "location": "",
-              "graduationDate": "",
-              "gpa": "",
-              "achievements": [""]
-            }
-          ],
-          "skills": [""],
-          "projects": [
-            {
-              "name": "",
-              "description": "",
-              "technologies": [""],
-              "link": ""
-            }
-          ]
-        }
-      `,
-      system:
-        "You are a resume parser that extracts key information from resumes. Be concise and focus on the most important details.",
-      maxTokens: 2000, // Limit the response size
-    })
+    // Generate parsed resume using NVIDIA AI
+    const response = await callNvidiaAPI([
+      { 
+        role: "system", 
+        content: "You are a resume parser that extracts key information from resumes. Be concise and focus on the most important details." 
+      },
+      {
+        role: "user",
+        content: `Extract structured information from this resume text and format it as JSON.\n\nRESUME TEXT:\n${truncatedText}`
+      }
+    ], MODELS.RESUME_ANALYSIS)
+    
+    const text = response.choices[0].message.content
 
     // Try to parse the response as JSON
     try {
-      // First, try to parse the response directly
       return JSON.parse(text) as ResumeData
     } catch (parseError) {
       console.error("Failed to parse initial response:", parseError)
-
-      // Try to extract JSON from the response if it contains other text
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         try {
@@ -271,19 +166,14 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
           console.error("Failed to extract JSON from response:", extractError)
         }
       }
-
-      // If all else fails, try a simpler approach with just basic information
       return extractBasicResumeInfo(resumeText)
     }
   } catch (error: any) {
     console.error("Error parsing resume:", error instanceof Error ? error.message : error)
-
-    // If we hit a token limit error, try the basic extraction approach
     if (error.toString().includes("token") || error.toString().includes("too large")) {
       console.log("Token limit exceeded, falling back to basic extraction")
       return extractBasicResumeInfo(resumeText)
     }
-
     return getDefaultResumeData()
   }
 }

@@ -35,9 +35,9 @@ export interface ResumeData {
   }[]
 }
 
-export interface GroqJobSearchResponse {
+export interface JobSearchResponse {
   jobs: Job[]
   total: number
   page: number
   limit: number
-} 
+}

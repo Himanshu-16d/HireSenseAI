@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import fetch from 'node-fetch';
 
-// NVIDIA API credentials
-const NVIDIA_API_KEY = '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';
-const NVIDIA_API_URL = 'https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/3c5e42f1-1d5c-41b1-88aa-83b78639bf6a';
+// NVIDIA API credentials from environment variables
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL;
 
 // Adzuna API credentials
 const APP_ID = process.env.ADZUNA_APP_ID || '';
