@@ -1,5 +1,5 @@
 import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
 export default withAuth(
   function middleware(req) {
@@ -17,11 +17,33 @@ export default withAuth(
   }
 )
 
+export function middleware(request: NextRequest) {
+  // Clone the request headers
+  const requestHeaders = new Headers(request.headers)
+  
+  // Get the user's inference preference from cookies
+  const useLocalInference = request.cookies.get('useLocalInference')?.value
+  
+  // Add the preference to the request headers
+  if (useLocalInference) {
+    requestHeaders.set('x-use-local-inference', useLocalInference)
+  }
+  
+  // Return the response with the modified headers
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+}
+
 export const config = {
   matcher: [
     "/resume-builder/:path*",
     "/job-finder/:path*",
     "/settings/:path*",
-    "/api/protected/:path*"
+    "/api/protected/:path*",
+    "/job-insights/:path*",
+    "/api/:path*"
   ]
 }
