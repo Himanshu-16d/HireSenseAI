@@ -1,4 +1,4 @@
-const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v2/chat/completions";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL || "https://api.nvcf.nvidia.com/v1/chat/completions";
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || "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";
 const DEFAULT_MODEL = "deepseek/deepseek-r1";
 
