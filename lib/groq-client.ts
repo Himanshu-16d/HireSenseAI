@@ -6,13 +6,14 @@ const DEFAULT_MODEL = process.env.DEFAULT_MODEL || "llama3-70b-8192";
 // Function to clean response text from common prefixes and formatting
 export function cleanResponseText(text: string): string {
   if (!text) return "";
-  
-  // Remove common prefixes
+    // Remove common prefixes
   const prefixesToRemove = [
     "Here is a possible job description:",
     "Here is a job description:",
     "Here's a job description:",
     "Here is the job description:",
+    "Here is a short job description for a Software Engineer at Google:",
+    "Here is a short job description for a Software Engineer at",
     "Job Description:",
     "Here's a possible summary:",
     "Here is a summary:",
