@@ -1,3 +1,4 @@
+// Client implementation inspired by Groq Python SDK
 const GROQ_API_URL = process.env.GROQ_API_URL || "https://api.groq.com/v1/chat/completions";
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
 const DEFAULT_MODEL = process.env.DEFAULT_MODEL || "llama3-70b-8192";
@@ -65,7 +66,14 @@ async function runLocalInference(messages: { role: string; content: string }[], 
 export async function callGroqAPI(
   messages: { role: string; content: string }[], 
   model: string = DEFAULT_MODEL,
-  headers?: Headers
+  headers?: Headers,
+  options: {
+    temperature?: number,
+    max_tokens?: number,
+    top_p?: number,
+    stream?: boolean,
+    stop?: string[] | null
+  } = {}
 ) {
   // Check inference preference from headers
   const useLocal = checkInferencePreference(headers);
@@ -76,6 +84,13 @@ export async function callGroqAPI(
   }
   
   try {
+    // Set default options for Groq API call
+    const temperature = options.temperature ?? 0.7;
+    const max_tokens = options.max_tokens ?? 1500;
+    const top_p = options.top_p ?? 1;
+    const stream = options.stream ?? false;
+    const stop = options.stop ?? undefined;
+
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
@@ -84,10 +99,11 @@ export async function callGroqAPI(
       },
       body: JSON.stringify({
         messages,
-        temperature: 0.7,
-        max_tokens: 1500,
-        top_p: 1,
-        stream: false,
+        temperature,
+        max_tokens,
+        top_p,
+        stream,
+        stop,
         model
       })
     });
@@ -120,6 +136,11 @@ export async function callGroqAPI(
       throw error;
     }
 
+    if (stream) {
+      // Return the stream response
+      return response;
+    }
+
     const data = await response.json();
     if (!data.choices?.[0]?.message) {
       throw new Error("Invalid response format from Groq API");
@@ -128,6 +149,64 @@ export async function callGroqAPI(
     return data;
   } catch (error) {
     console.error("Groq API call failed:", error);
+    throw error;
+  }
+}
+
+// Function to handle streaming responses
+export async function* streamGroqAPI(
+  messages: { role: string; content: string }[],
+  model: string = DEFAULT_MODEL,
+  options: {
+    temperature?: number,
+    max_tokens?: number,
+    top_p?: number,
+    stop?: string[] | null
+  } = {}
+) {
+  // Set up streaming call
+  const streamOptions = {
+    ...options,
+    stream: true
+  };
+
+  try {
+    const response = await callGroqAPI(messages, model, undefined, streamOptions);
+    
+    if (!(response instanceof Response)) {
+      throw new Error("Expected streaming response but got non-stream response");
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Failed to get reader from response");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          try {
+            const data = JSON.parse(line.slice(6));
+            yield data;
+          } catch (e) {
+            console.error('Error parsing stream data:', e);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Stream API call failed:", error);
     throw error;
   }
 }
@@ -176,7 +255,11 @@ Return as JSON with the following structure:
       role: "user",
       content: prompt
     }
-  ], MODELS.REALTIME_MATCHING);
+  ], MODELS.REALTIME_MATCHING, undefined, {
+    temperature: 0.7,
+    max_tokens: 2000,
+    top_p: 1
+  });
 
   return JSON.parse(response.choices[0]?.message?.content || "{}");
 }

@@ -83,6 +83,15 @@ export function Navbar() {
             >
               About
             </Link>
+            <Link 
+              href="/chat-demo" 
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/chat-demo" && "text-primary font-semibold bg-primary/10"
+              )}
+            >
+              Chat Demo
+            </Link>
           </nav>
         </div>
         
@@ -139,6 +148,15 @@ export function Navbar() {
           )}
         >
           About
+        </Link>
+        <Link 
+          href="/chat-demo"
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/chat-demo" && "text-primary font-semibold bg-primary/10"
+          )}
+        >
+          Chat Demo
         </Link>
       </div>
     </motion.nav>
