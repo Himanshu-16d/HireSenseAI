@@ -33,6 +33,6 @@ export async function generateFieldContent({
   const response = await callGroqAPI([
     { role: "system", content: "You are an expert resume writer and career coach." },
     { role: "user", content: prompt }
-  ], "deepseek-ai/deepseek-r1");
+  ], "llama3-70b-8192");
   return response.choices[0]?.message?.content?.trim() || "";
 } 

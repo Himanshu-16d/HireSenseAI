@@ -35,8 +35,8 @@ class LocalInferenceService {
       // Initialize WebLLM
       if (typeof window !== 'undefined') {  // Only run in browser environment
         const chat = new ChatModule();
-        await chat.reload("deepseek-r1");
-        this.modelInstances["deepseek/deepseek-r1"] = chat;
+        await chat.reload("llama3-70b");
+        this.modelInstances["llama3-70b-8192"] = chat;
         
         console.log("Local inference service initialized with WebLLM");
       } else {
@@ -50,7 +50,7 @@ class LocalInferenceService {
     }
   }
   
-  async generateResponse(messages: Message[], model: string = "deepseek/deepseek-r1"): Promise<InferenceResponse> {
+  async generateResponse(messages: Message[], model: string = "llama3-70b-8192"): Promise<InferenceResponse> {
     await this.initialize();
     
     // If running in browser and model is loaded
