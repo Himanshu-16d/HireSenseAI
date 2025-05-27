@@ -9,7 +9,6 @@ import { useSession, signIn } from 'next-auth/react'
 import { useToast } from '@/components/ui/use-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { InferenceToggle } from '@/components/ui/inference-toggle'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -63,18 +62,7 @@ export function Navbar() {
               onClick={() => !session && handleProtectedRoute()}
             >
               Job Finder
-            </Link>
-            <Link 
-              href={session ? "/job-insights" : "/login?redirect=/job-insights"}
-              className={cn(
-                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-                pathname === "/job-insights" && "text-primary font-semibold bg-primary/10"
-              )}
-              onClick={() => !session && handleProtectedRoute()}
-            >
-              Job Insights
-            </Link>
-            <Link 
+            </Link>            <Link 
               href="/about" 
               className={cn(
                 "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
@@ -83,21 +71,10 @@ export function Navbar() {
             >
               About
             </Link>
-            <Link 
-              href="/chat-demo" 
-              className={cn(
-                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
-                pathname === "/chat-demo" && "text-primary font-semibold bg-primary/10"
-              )}
-            >
-              Chat Demo
-            </Link>
           </nav>
         </div>
-        
-        {/* Right: Actions */}
+          {/* Right: Actions */}
         <div className="flex items-center gap-4 w-auto justify-end">
-          <InferenceToggle />
           {status === 'authenticated' ? (
             <UserNav />
           ) : (
