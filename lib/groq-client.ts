@@ -48,64 +48,11 @@ export function cleanResponseText(text: string): string {
   return cleanedText;
 }
 
-// Default to environment variable, but can be overridden by request headers
-let USE_LOCAL_INFERENCE = process.env.USE_LOCAL_INFERENCE === "true";
-
-// Function to check request headers for inference preference
-export function checkInferencePreference(headers?: Headers) {
-  if (typeof window !== 'undefined') {
-    // In browser environment, check cookies
-    const cookieValue = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('useLocalInference='))
-      ?.split('=')[1];
-    
-    if (cookieValue) {
-      USE_LOCAL_INFERENCE = cookieValue === "true";
-    }
-  } else if (headers) {
-    // In server environment, check request headers
-    const headerValue = headers.get('x-use-local-inference');
-    if (headerValue) {
-      USE_LOCAL_INFERENCE = headerValue === "true";
-    }
-  }
-  
-  return USE_LOCAL_INFERENCE;
-}
-
-// Import local inference service
-import { localInference } from "./local-inference";
-
-// Debug logging for deployment troubleshooting
-if (process.env.NODE_ENV === 'production') {
-  console.log('Groq API Configuration:');
-  console.log('API URL:', GROQ_API_URL);
-  console.log('API Key exists:', !!GROQ_API_KEY);
-  console.log('Model:', DEFAULT_MODEL);
-  console.log('Using local inference (default):', USE_LOCAL_INFERENCE);
-}
-
-if (!GROQ_API_KEY && !USE_LOCAL_INFERENCE) {
-  console.warn("GROQ_API_KEY is not defined in environment variables and local inference is disabled");
-}
-
 interface GroqError {
   message: string;
   type?: string;
   param?: string;
   code?: string;
-}
-
-// Function to run local inference
-async function runLocalInference(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL) {
-  try {
-    console.log("Running local inference with model:", model);
-    return await localInference.generateResponse(messages, model);
-  } catch (error) {
-    console.error("Local inference failed:", error);
-    throw error;
-  }
 }
 
 export async function callGroqAPI(
@@ -119,16 +66,7 @@ export async function callGroqAPI(
     stream?: boolean,
     stop?: string[] | null
   } = {}
-) {
-  // Check inference preference from headers
-  const useLocal = checkInferencePreference(headers);
-  
-  // If local inference is enabled, use that instead of API call
-  if (useLocal) {
-    return runLocalInference(messages, model);
-  }
-  
-  try {
+) {  try {
     // Set default options for Groq API call
     const temperature = options.temperature ?? 0.7;
     const max_tokens = options.max_tokens ?? 1500;
