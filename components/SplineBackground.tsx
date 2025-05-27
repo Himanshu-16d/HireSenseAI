@@ -1,125 +1,54 @@
 'use client';
 
-import React, { useState, Suspense, useEffect, useCallback } from 'react';
-import Spline from '@splinetool/react-spline';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { SplineErrorBoundary } from './spline-error-boundary';
+import React from 'react';
 
-const FallbackBackground = () => (
-  <>
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: -2,
-        width: '100vw',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        opacity: 0.9,
-        pointerEvents: 'none',
-      }}
-    />
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: -1,
-        width: '100vw',
-        height: '100vh',
-        background: 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
-        animation: 'pulse 8s infinite',
-        pointerEvents: 'none',
-      }}
-    />
+const AnimatedGradient = () => (
+  <div className="fixed inset-0 -z-10 h-full w-full">
+    {/* Main background gradient */}
+    <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background" />
+    
+    {/* Animated blobs */}
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute -inset-[100px] opacity-50">
+        <div 
+          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 blur-3xl animate-pulse"
+          style={{ animationDuration: '8s' }}
+        />
+        <div 
+          className="absolute top-2/3 right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-r from-blue-500/30 to-teal-500/30 blur-3xl animate-pulse"
+          style={{ animationDuration: '10s', animationDelay: '1s' }}
+        />
+        <div 
+          className="absolute top-1/3 right-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-r from-indigo-500/30 to-violet-500/30 blur-3xl animate-pulse"
+          style={{ animationDuration: '12s', animationDelay: '2s' }}
+        />
+      </div>
+    </div>
+
+    {/* Grid pattern overlay */}
+    <div className="absolute inset-0">
+      <div 
+        className="h-full w-full"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: '24px 24px'
+        }}
+      />
+    </div>
+
+    {/* Radial gradient overlay */}
     <div 
-      className="fixed inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+      className="absolute inset-0"
+      style={{
+        background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.3) 100%)'
+      }}
     />
-  </>
+  </div>
 );
 
-interface SplineContainerProps {
-  onLoad: () => void;
-  onError: (error: unknown) => void;
-}
-
-const SplineContainer: React.FC<SplineContainerProps> = ({ onLoad, onError }) => {
-  useEffect(() => {
-    // Add logging for debugging
-    const handleError = (error: ErrorEvent) => {
-      console.error('Spline error:', error);
-      onError(error.error);
-    };
-
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, [onError]);
-
-  return (
-    <Spline 
-      scene="https://prod.spline.design/6Wq1Q9sz-dYPfujx/scene.splinecode"
-      onLoad={onLoad}
-      onError={(e: unknown) => {
-        console.error('Spline onError:', e);
-        onError(e);
-      }}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block'
-      }}
-    />
-  );
-};
-
-export default function SplineBackground() {
-  const isMobile = useIsMobile();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  const handleSplineLoad = useCallback(() => {
-    setIsLoading(false);
-  }, []);
-
-  const handleSplineError = useCallback((error: unknown) => {
-    console.error('Spline component error:', error);
-    setHasError(true);
-    setIsLoading(false);
-  }, []);
-
-  // Return early if mobile or has error
-  if (isMobile || hasError) {
-    return <FallbackBackground />;
-  }
-
-  return (
-    <>
-      {isLoading && <FallbackBackground />}
-      <div 
-        className={`fixed inset-0 w-full h-full ${
-          isLoading ? 'opacity-0' : 'opacity-80'
-        } transition-opacity duration-1000`}
-        style={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: -1,
-          overflow: 'hidden',
-          pointerEvents: 'none'
-        }}
-      >
-        <SplineErrorBoundary fallback={<FallbackBackground />}>
-          <Suspense fallback={<FallbackBackground />}>
-            <div className="w-full h-full">
-              <SplineContainer 
-                onLoad={handleSplineLoad}
-                onError={handleSplineError}
-              />
-            </div>
-          </Suspense>
-        </SplineErrorBoundary>
-      </div>
-    </>
-  );
+export default function Background() {
+  return <AnimatedGradient />;
 }
