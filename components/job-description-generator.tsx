@@ -51,6 +51,21 @@ export function JobDescriptionGenerator() {
     setSelectedMonth(date)
   }
 
+  const generateWithRetry = async (retries = 2) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const result = await generateJobDescription(companyDetails, jobDetails);
+        if (!result.overview || result.overview.includes("Failed to generate")) {
+          throw new Error("Failed to generate job description");
+        }
+        return result;
+      } catch (error) {
+        if (i === retries - 1) throw error; // Last attempt failed
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -88,11 +103,8 @@ Ideal candidates excel in problem-solving, possess strong technical skills, and 
         
         setConciseJobDescription(conciseDesc);
       } else {
-        // Generate detailed job description
-        const result = await generateJobDescription(companyDetails, jobDetails);
-        if (!result.overview || result.overview.includes("Failed to generate")) {
-          throw new Error("Failed to generate job description. Please try again.");
-        }
+        // Generate detailed job description with retries
+        const result = await generateWithRetry(2);
         setGeneratedDescription(result);
       }
     } catch (error: any) {

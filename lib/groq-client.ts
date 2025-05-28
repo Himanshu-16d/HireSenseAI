@@ -90,15 +90,16 @@ export async function callGroqAPI(
         model
       })
     });
-    
-    if (!response.ok) {
+      if (!response.ok) {
       const errorText = await response.text();
       let errorJson: GroqError | null = null;
       
       try {
         errorJson = JSON.parse(errorText);
+        throw new Error(errorJson?.message || 'Failed to generate content with Groq API');
       } catch (e) {
-        // If not JSON, use text as is
+        // If not JSON or other error, throw with status
+        throw new Error(`Groq API error (${response.status}): ${errorText || 'Unknown error'}`)
       }
 
       // Log detailed error information in production

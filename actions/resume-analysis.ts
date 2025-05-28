@@ -83,11 +83,24 @@ function createDefaultJobDescription(
   };
 }
 
+// Simple in-memory cache for job descriptions
+const jobDescriptionCache = new Map<string, { description: GeneratedJobDescription; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+
 export async function generateJobDescription(
   companyDetails: CompanyDetails,
   jobDetails: JobDetails
 ): Promise<GeneratedJobDescription> {
   try {
+    // Create a cache key from the input parameters
+    const cacheKey = JSON.stringify({ companyDetails, jobDetails });
+    
+    // Check cache first
+    const cached = jobDescriptionCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.description;
+    }
+
     if (!process.env.GROQ_API_KEY) {
       console.warn("GROQ_API_KEY is not configured, using default job description");
       return createDefaultJobDescription(jobDetails, companyDetails);
@@ -173,6 +186,13 @@ Return ONLY a valid JSON object with this structure:
         console.error("Invalid job description format from API");
         return createDefaultJobDescription(jobDetails, companyDetails);
       }
+
+      // Cache the successful result
+      jobDescriptionCache.set(cacheKey, {
+        description: parsed,
+        timestamp: Date.now()
+      });
+
       return parsed;
     } catch (parseError) {
       console.error("Error parsing Groq API response:", parseError);

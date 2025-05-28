@@ -10,15 +10,39 @@ import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Location {
-  id: string
-  name: string
-  country: string
-  state?: string
-  city?: string
-  coordinates?: {
-    lat: number
-    lon: number
-  }
+  id: string;
+  name: string;
+  country: string;
+  state?: string;
+  city: string;
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
+}
+
+interface OpenCageResult {
+  formatted: string;
+  components: {
+    country?: string;
+    state?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+  };
+  geometry: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface OpenCageResponse {
+  status: {
+    code: number;
+    message: string;
+  };
+  results: OpenCageResult[];
+  total_results: number;
 }
 
 const MOCK_LOCATIONS: Location[] = [
@@ -53,99 +77,87 @@ export function LocationSearch({
   onChange,
   placeholder = "Search location...",
 }: {
-  value?: string
-  onChange: (value: string) => void
-  placeholder?: string
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }) {
-  const [open, setOpen] = useState(false)
-  const [locations, setLocations] = useState<Location[]>([])
-  const [search, setSearch] = useState("")
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [search, setSearch] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLocations = async () => {
       if (search.length < 2) {
-        setLocations([])
-        return
+        setLocations([]);
+        return;
       }
       
       try {
-        console.log('Testing OpenCage API...')
-        console.log('API Key:', process.env.NEXT_PUBLIC_OPENCAGE_KEY ? 'Present' : 'Missing')
+        const apiKey = process.env.NEXT_PUBLIC_OPENCAGE_KEY;
+        if (!apiKey) {
+          throw new Error('Location search unavailable (API key missing)');
+        }
+
+        const response = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(search)}&key=${apiKey}&limit=10&no_annotations=1&min_confidence=5`
+        );
         
-        if (!process.env.NEXT_PUBLIC_OPENCAGE_KEY) {
-          console.log('Using mock data - No OpenCage API key found')
+        const data: OpenCageResponse = await response.json();
+
+        if (data.status?.code === 401 || data.status?.code === 403) {
+          throw new Error('Location search unavailable (API key invalid)');
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        if (!data.results || !Array.isArray(data.results)) {
+          throw new Error('Invalid API response format');
+        }
+
+        const mappedLocations = data.results.map((result: OpenCageResult) => ({
+          id: result.formatted,
+          name: result.formatted,
+          country: result.components?.country || "",
+          state: result.components?.state || "",
+          city: result.components?.city || result.components?.town || result.components?.village || "",
+          coordinates: {
+            lat: result.geometry?.lat || 0,
+            lon: result.geometry?.lng || 0
+          }
+        }));
+
+        if (mappedLocations.length === 0) {
+          setLocations([]);
+          setError('No locations found');
+        } else {
+          setLocations(mappedLocations);
+          setError(null);
+        }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch locations';
+        
+        if (errorMessage.includes('API key')) {
+          setError(errorMessage);
+          setLocations([]);
+        } else {
+          setError('Error fetching locations. Using mock data.');
           const filteredLocations = MOCK_LOCATIONS.filter(loc => 
             loc.name.toLowerCase().includes(search.toLowerCase()) ||
             loc.country.toLowerCase().includes(search.toLowerCase()) ||
             (loc.state && loc.state.toLowerCase().includes(search.toLowerCase()))
-          )
-          setLocations(filteredLocations)
-          setError(null)
-          return
+          );
+          setLocations(filteredLocations);
         }
-
-        console.log('Making API request to OpenCage...')
-        const response = await fetch(
-          `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
-            search
-          )}&key=${process.env.NEXT_PUBLIC_OPENCAGE_KEY}&limit=10&no_annotations=1`
-        )
-        
-        console.log('API Response Status:', response.status)
-        
-        if (!response.ok) {
-          console.error('API Error:', await response.text())
-          throw new Error('Failed to fetch locations')
-        }
-        
-        const data = await response.json()
-        console.log('API Response Data:', data)
-        
-        if (data.results && Array.isArray(data.results)) {
-          console.log('Found locations:', data.results.length)
-          try {
-            const mappedLocations = data.results.map((result: any) => {
-              console.log('Processing result:', result)
-              return {
-                id: result.formatted,
-                name: result.formatted,
-                country: result.components?.country || "",
-                state: result.components?.state || "",
-                city: result.components?.city || result.components?.town || result.components?.village || "",
-                coordinates: {
-                  lat: result.geometry?.lat || 0,
-                  lon: result.geometry?.lng || 0
-                }
-              }
-            })
-            console.log('Mapped locations:', mappedLocations)
-            setLocations(mappedLocations)
-            setError(null)
-          } catch (mappingError) {
-            console.error('Error mapping locations:', mappingError)
-            throw new Error('Failed to process location data')
-          }
-        } else {
-          console.log('No results found in API response')
-          setLocations([])
-          setError('No locations found')
-        }
-      } catch (error) {
-        console.error("Error fetching locations:", error)
-        setError('Error fetching locations. Using mock data.')
-        const filteredLocations = MOCK_LOCATIONS.filter(loc => 
-          loc.name.toLowerCase().includes(search.toLowerCase()) ||
-          loc.country.toLowerCase().includes(search.toLowerCase()) ||
-          (loc.state && loc.state.toLowerCase().includes(search.toLowerCase()))
-        )
-        setLocations(filteredLocations)
       }
-    }
+    };
 
-    const debounceTimer = setTimeout(fetchLocations, 300)
-    return () => clearTimeout(debounceTimer)
+    const debounceTimer = setTimeout(fetchLocations, 300);
+    return () => clearTimeout(debounceTimer);
   }, [search])
 
   const handleSelect = (location: Location) => {
@@ -228,4 +240,4 @@ export function LocationSearch({
       )}
     </div>
   )
-} 
+}
