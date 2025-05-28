@@ -11,6 +11,7 @@ import RealtimeFeedback from "@/components/realtime-feedback"
 import { DayPicker } from "react-day-picker"
 import { format } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { LocationSearch } from "@/components/ui/location-search"
 import { cn } from "@/lib/utils"
 import { generateFieldContent } from "@/actions/generate-field-content"
 
@@ -361,16 +362,14 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                   onChange={(e) => updatePersonalInfo("phone", e.target.value)}
                   placeholder="(123) 456-7890"
                 />
-              </div>
-              <div className="space-y-2">
+              </div>              <div className="space-y-2">
                 <label htmlFor="location" className="text-sm font-medium">
                   Location
                 </label>
-                <Input
-                  id="location"
+                <LocationSearch
                   value={resumeData.personalInfo.location}
-                  onChange={(e) => updatePersonalInfo("location", e.target.value)}
-                  placeholder="New York, NY"
+                  onChange={(value) => updatePersonalInfo("location", value)}
+                  placeholder="Search for your location"
                 />
               </div>
               <div className="space-y-2">
@@ -474,16 +473,14 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                         onChange={(e) => updateExperience(index, "company", e.target.value)}
                         placeholder="Tech Company Inc."
                       />
-                    </div>
-                    <div className="space-y-2">
+                    </div>                    <div className="space-y-2">
                       <label htmlFor={`exp-location-${index}`} className="text-sm font-medium">
                         Location
                       </label>
-                      <Input
-                        id={`exp-location-${index}`}
+                      <LocationSearch
                         value={exp.location}
-                        onChange={(e) => updateExperience(index, "location", e.target.value)}
-                        placeholder="San Francisco, CA"
+                        onChange={(value) => updateExperience(index, "location", value)}
+                        placeholder="Search for location"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -729,16 +726,14 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                         onChange={(e) => updateEducation(index, "institution", e.target.value)}
                         placeholder="University of Technology"
                       />
-                    </div>
-                    <div className="space-y-2">
+                    </div>                    <div className="space-y-2">
                       <label htmlFor={`edu-location-${index}`} className="text-sm font-medium">
                         Location
                       </label>
-                      <Input
-                        id={`edu-location-${index}`}
+                      <LocationSearch
                         value={edu.location}
-                        onChange={(e) => updateEducation(index, "location", e.target.value)}
-                        placeholder="Boston, MA"
+                        onChange={(value) => updateEducation(index, "location", value)}
+                        placeholder="Search for location"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
