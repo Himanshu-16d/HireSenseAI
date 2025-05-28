@@ -1,5 +1,6 @@
 "use server";
 import { callGroqAPI, cleanResponseText } from "@/lib/groq-client";
+import { ALL_TECHNOLOGIES } from "@/lib/technologies";
 
 export async function generateFieldContent({
   field,
@@ -26,7 +27,7 @@ export async function generateFieldContent({
   } else if (field === "skills") {
     prompt = `Given this resume, return ONLY a comma-separated list of the most relevant professional skills (5-10 max). Do NOT include any explanation, introduction, or extra text. No markdown, no bullet points, no sentences, just the list. Example: Skill1, Skill2, Skill3, ...\n${JSON.stringify(resumeData)}\n`;
   } else if (field === "technologies") {
-    prompt = `Given this project, return ONLY a comma-separated list of the most relevant technologies used (3-8 max). Do NOT include any explanation, introduction, or extra text. No markdown, no bullet points, no sentences, just the list. Example: Tech1, Tech2, Tech3, ...\n${JSON.stringify(project)}\n`;
+    prompt = `Given this project, return ONLY a comma-separated list of the most relevant technologies used (3-8 max) from this list:\n${ALL_TECHNOLOGIES.join(", ")}\n\nProject:\n${JSON.stringify(project)}\n\nReturn ONLY the comma-separated list, no other text.`;
   } else if (field === "achievements") {
     prompt = `Given this work experience, return ONLY a concise, comma-separated list of a maximum of 3 key achievements or impact statements. Do NOT include any explanation, introduction, or extra text. No markdown, no bullet points, no sentences, just the list. Example: Increased sales by 20%, Led a team of 5, ...\n${JSON.stringify(experience)}\n`;
   }
@@ -38,4 +39,4 @@ export async function generateFieldContent({
   // Clean the response text
   const rawContent = response.choices[0]?.message?.content?.trim() || "";
   return cleanResponseText(rawContent);
-} 
+}

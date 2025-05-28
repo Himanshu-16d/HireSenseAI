@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Plus, Trash2, Loader2, Sparkles } from "lucide-react"
+import { Plus, Trash2, Loader2, Sparkles, ChevronsUpDown } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
 import RealtimeFeedback from "@/components/realtime-feedback"
 import { DayPicker } from "react-day-picker"
@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { LocationSearch } from "@/components/ui/location-search"
 import { cn } from "@/lib/utils"
 import { generateFieldContent } from "@/actions/generate-field-content"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { ALL_TECHNOLOGIES, TECHNOLOGIES } from "@/lib/technologies"
 
 interface ResumeFormProps {
   resumeData: ResumeData
@@ -25,6 +27,10 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
   const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(new Date())
   const [loadingField, setLoadingField] = useState<string | null>(null)
   const [errorField, setErrorField] = useState<string | null>(null)
+  const [techSearch, setTechSearch] = useState("")
+  const filteredTechnologies = ALL_TECHNOLOGIES.filter(tech => 
+    tech.toLowerCase().includes(techSearch.toLowerCase())
+  ).slice(0, 10)
 
   const handleStartDateSelect = (date: Date | undefined, index: number) => {
     setSelectedStartDate(date)
@@ -320,6 +326,11 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
     } finally {
       setLoadingField(null)
     }
+  }
+
+  const handleTechSelect = (index: number, value: string) => {
+    updateProjectTechnology(index, techIndex, value)
+    setTechSearch("")
   }
 
   return (
@@ -910,11 +921,45 @@ export default function ResumeForm({ resumeData, onChange }: ResumeFormProps) {
                     </div>
                     {project.technologies.map((tech, techIndex) => (
                       <div key={techIndex} className="flex items-center gap-2">
-                        <Input
-                          value={tech}
-                          onChange={(e) => updateProjectTechnology(index, techIndex, e.target.value)}
-                          placeholder="React, Node.js, MongoDB, etc."
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              {tech || "Select technology..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput
+                                placeholder="Search technologies..."
+                                value={techSearch}
+                                onValueChange={setTechSearch}
+                              />
+                              <CommandEmpty>No technology found.</CommandEmpty>
+                              <div className="max-h-64 overflow-y-auto">
+                                {Object.entries(TECHNOLOGIES).map(([category, techs]) => (
+                                  <CommandGroup key={category} heading={category.replace(/([A-Z])/g, ' $1').trim()}>
+                                    {techs.filter(tech => 
+                                      tech.toLowerCase().includes(techSearch.toLowerCase())
+                                    ).map((tech) => (
+                                      <CommandItem
+                                        key={tech}
+                                        value={tech}
+                                        onSelect={() => handleTechSelect(index, tech)}
+                                      >
+                                        {tech}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                ))}
+                              </div>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="ghost"
                           size="icon"
