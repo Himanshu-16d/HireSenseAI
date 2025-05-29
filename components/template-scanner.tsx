@@ -46,9 +46,8 @@ export function TemplateScanner({ resumeData, onEnhancedData }: TemplateScannerP
       });
 
       if (!response.ok) throw new Error("Failed to generate preview");
-      
-      const { data } = await response.json();
-      setPreviewData(data.enhancedResume);
+        const enhancedResume = await response.json();
+      setPreviewData(enhancedResume);
     } catch (error) {
       console.error("Preview generation error:", error);
       toast({

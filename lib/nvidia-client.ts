@@ -1,4 +1,39 @@
-// ...existing code...
+import type { ChatCompletionMessage } from '@/types/chat';
+
+// Configure the NVIDIA API client
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL;
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
+export async function callNvidiaAPI(messages: ChatCompletionMessage[]): Promise<string> {
+  if (!NVIDIA_API_URL || !NVIDIA_API_KEY) {
+    throw new Error('NVIDIA API configuration is missing');
+  }
+
+  try {
+    const response = await fetch(NVIDIA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${NVIDIA_API_KEY}`
+      },
+      body: JSON.stringify({
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`NVIDIA API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling NVIDIA API:', error);
+    throw error;
+  }
+}
 
 // Helper function to analyze template structure
 export async function analyzeTemplate(templateId: string): Promise<any> {

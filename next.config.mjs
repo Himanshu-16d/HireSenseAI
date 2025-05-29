@@ -12,26 +12,48 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  devIndicators: {
-    buildActivity: false
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@splinetool/runtime': '@splinetool/runtime'
+    };
+    return config;
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb'
+    }
   },
   webpack: (config, { isServer }) => {
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx']
+    };
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
-      }
+      };
     }
-    config.externals.push({
-      'utf-8-validate': 'commonjs utf-8-validate',
-      'bufferutil': 'commonjs bufferutil',
-    });
-    return config
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['bcryptjs'],
+
+    config.resolve.byDependency = {
+      ...config.resolve.byDependency,
+      esm: {
+        conditionNames: ['import', 'module', 'require', 'default']
+      }
+    };
+
+    config.externals = [
+      ...(config.externals || []),
+      {
+        'utf-8-validate': 'commonjs utf-8-validate',
+        'bufferutil': 'commonjs bufferutil',
+      }
+    ];
+
+    return config;
   },
   async rewrites() {
     return [

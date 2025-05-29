@@ -1,0 +1,39 @@
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.3s ease-out;
+}
+
+.layer1 {
+  opacity: 0.6;
+  transform: translateZ(-10px) scale(2);
+}
+
+.layer2 {
+  opacity: 0.4;
+  transform: translateZ(-20px) scale(2.1);
+}
+
+.layer3 {
+  opacity: 0.2;
+  transform: translateZ(-30px) scale(2.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer {
+    transition: none;
+    transform: none;
+  }
+}

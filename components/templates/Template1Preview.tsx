@@ -1,11 +1,9 @@
+"use client";
+
 import type { ResumeData, JobTarget } from '@/types/resume';
 
 interface Template1PreviewProps {
   resumeData: ResumeData;
-  feedback: string;
-  score: number | null;
-  jobTarget: JobTarget;
-  atsFeedback?: any;
 }
 
 function cleanAIText(text: string) {
@@ -117,4 +115,4 @@ export default function Template1Preview({ resumeData }: Template1PreviewProps) 
       )}
     </div>
   );
-} 
+}

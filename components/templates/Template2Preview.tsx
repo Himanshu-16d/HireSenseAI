@@ -1,11 +1,9 @@
-import type { ResumeData, JobTarget } from '@/types/resume';
+"use client";
+
+import type { ResumeData } from '@/types/resume';
 
 interface Template2PreviewProps {
   resumeData: ResumeData;
-  feedback: string;
-  score: number | null;
-  jobTarget: JobTarget;
-  atsFeedback?: any;
 }
 
 // Utility to remove <think>...</think> blocks
@@ -121,4 +119,4 @@ export default function Template2Preview({ resumeData }: Template2PreviewProps) 
       )}
     </div>
   );
-} 
+}

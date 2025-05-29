@@ -1,13 +1,12 @@
-import type { ResumeData, JobTarget } from '@/types/resume';
+"use client";
+
+import type { ResumeData } from '@/types/resume';
 
 interface Template3PreviewProps {
   resumeData: ResumeData;
-  feedback: string;
-  score: number | null;
-  jobTarget: JobTarget;
-  atsFeedback?: any;
 }
 
+// Utility to remove <think>...</think> blocks
 function cleanAIText(text: string) {
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 }
@@ -117,4 +116,4 @@ export default function Template3Preview({ resumeData }: Template3PreviewProps) 
       )}
     </div>
   );
-} 
+}

@@ -14,23 +14,12 @@ export async function POST(request: Request) {
       resumeData,
       templateId,
       templateAnalysis
-    );
-
-    // Parse and validate the enhanced resume data
-    let enhancedData: ResumeData;
-    try {
-      enhancedData = JSON.parse(completion);
-      
-      // Basic validation
-      if (!enhancedData.personalInfo || !enhancedData.experience || !enhancedData.education) {
-        throw new Error("Invalid resume data structure");
-      }
-    } catch (error) {
-      console.error("Error parsing enhanced resume data:", error);
-      throw new Error("Failed to process enhanced resume data");
+    );    // Validate the enhanced resume data
+    if (!enhancedResume.personalInfo || !enhancedResume.experience || !enhancedResume.education) {
+      throw new Error("Invalid resume data structure");
     }
 
-    return NextResponse.json(enhancedData);
+    return NextResponse.json(enhancedResume);
   } catch (error) {
     console.error("Error enhancing resume:", error);
     return NextResponse.json(

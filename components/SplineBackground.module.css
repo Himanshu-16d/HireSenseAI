@@ -1,0 +1,45 @@
+.gradientBackground {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradientContainer {
+  position: absolute;
+  inset: -100px;
+  opacity: 0.5;
+}
+
+.gradientAnimation {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  animation: gradientMove 15s linear infinite;
+  background: linear-gradient(
+    45deg,
+    hsla(238, 100%, 71%, 0.3) 0%,
+    hsla(295, 100%, 84%, 0.3) 25%,
+    hsla(352, 100%, 78%, 0.3) 50%,
+    hsla(158, 100%, 84%, 0.3) 75%,
+    hsla(238, 100%, 71%, 0.3) 100%
+  );
+  background-size: 400% 400%;
+  filter: blur(24px);
+  z-index: -1;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 0%;
+    transform: rotate(0deg);
+  }
+  50% {
+    background-position: 100% 100%;
+    transform: rotate(180deg);
+  }
+  100% {
+    background-position: 0% 0%;
+    transform: rotate(360deg);
+  }
+}
