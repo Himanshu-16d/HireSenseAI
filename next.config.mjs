@@ -8,10 +8,11 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  images: {
+  },  images: {
     unoptimized: true,
   },
+  // Allow large file loading and specify video as an allowed asset
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
