@@ -3,7 +3,11 @@ import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Navbar } from "@/components/navbar"
-import VideoBackground from "@/components/VideoBackground"
+import dynamic from 'next/dynamic'
+
+// Dynamically import backgrounds with no SSR
+const VideoBackground = dynamic(() => import('@/components/VideoBackground'), { ssr: false })
+const StaticBackground = dynamic(() => import('@/components/StaticBackground'), { ssr: false })
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const poppins = Poppins({ 
@@ -22,10 +26,34 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // For development, always use VideoBackground
+  // In production, we'll try the video but have a static fallback
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
-        <VideoBackground />
+        {isProduction ? (
+          <>
+            {/* In production, we use both but hide one with CSS based on video loading */}
+            <VideoBackground />
+            <div id="static-bg-fallback" className="hidden">
+              <StaticBackground />
+            </div>
+            <script dangerouslySetInnerHTML={{ __html: `
+              // If video fails to load or play within 3 seconds, show static background
+              setTimeout(() => {
+                const video = document.querySelector('video');
+                if (!video || video.readyState < 3) {
+                  document.getElementById('static-bg-fallback').classList.remove('hidden');
+                }
+              }, 3000);
+            `}} />
+          </>
+        ) : (
+          // In development, just use the video background
+          <VideoBackground />
+        )}
         <Providers>
           <Navbar />
           <main className="min-h-[calc(100vh-4rem)]">

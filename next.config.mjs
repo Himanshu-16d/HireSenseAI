@@ -57,6 +57,7 @@ const nextConfig = {
           publicPath: '/_next/static/media/',
           outputPath: 'static/media/',
           name: '[name].[hash].[ext]',
+          esModule: false, // This fixes issues with video sources in production
         },
       },
     });
