@@ -8,18 +8,12 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },  images: {
+  },
+  images: {
     unoptimized: true,
   },
   // Allow large file loading and specify video as an allowed asset
   assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@splinetool/runtime': '@splinetool/runtime'
-    };
-    return config;
-  },
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb'
@@ -53,6 +47,19 @@ const nextConfig = {
         'bufferutil': 'commonjs bufferutil',
       }
     ];
+
+    // Add support for video files
+    config.module.rules.push({
+      test: /\.(mp4|webm|ogg)$/,
+      use: {
+        loader: 'file-loader',
+        options: {
+          publicPath: '/_next/static/media/',
+          outputPath: 'static/media/',
+          name: '[name].[hash].[ext]',
+        },
+      },
+    });
 
     return config;
   },

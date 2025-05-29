@@ -1,58 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-interface VideoBackgroundProps {
-  videoSrc?: string;
-}
+export default function VideoBackground() {
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-export default function VideoBackground({ videoSrc = "/Background.mp4" }: VideoBackgroundProps) {
-  const [isLoading, setIsLoading] = React.useState(true);
-  
-  React.useEffect(() => {
-    // Force the component to rerender when in production to handle Vercel's asset paths
-    setIsLoading(false);
+  useEffect(() => {
+    // Ensure video plays when component mounts
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.error("Video playback failed:", error);
+      });
+    }
   }, []);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: -1,
-        width: '100vw',
-        height: '100vh',
-        pointerEvents: 'none',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #000000 0%, #050816 100%)', // Fallback color
-      }}
-    >
+    <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none overflow-hidden">
       <video
-        key={isLoading ? 'loading' : 'loaded'}
+        ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        preload="auto"
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-        onError={(e) => {
-          console.error('Video loading error:', e);
-        }}
+        className="w-full h-full object-cover"
       >
-        <source src={videoSrc} type="video/mp4" />
-        Your browser does not support the video tag.
+        <source src="/Background.mp4" type="video/mp4" />
       </video>
-      <div 
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        }}
-      />
+      <div className="absolute inset-0 bg-black/20" />
     </div>
   );
 }
