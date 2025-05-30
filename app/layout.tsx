@@ -26,34 +26,39 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // For development, always use VideoBackground
-  // In production, we'll try the video but have a static fallback
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
-        {isProduction ? (
-          <>
-            {/* In production, we use both but hide one with CSS based on video loading */}
-            <VideoBackground />
-            <div id="static-bg-fallback" className="hidden">
-              <StaticBackground />
-            </div>
-            <script dangerouslySetInnerHTML={{ __html: `
-              // If video fails to load or play within 3 seconds, show static background
-              setTimeout(() => {
-                const video = document.querySelector('video');
-                if (!video || video.readyState < 3) {
-                  document.getElementById('static-bg-fallback').classList.remove('hidden');
-                }
-              }, 3000);
-            `}} />
-          </>
-        ) : (
-          // In development, just use the video background
-          <VideoBackground />
-        )}
+        {/* VideoBackground now handles different sources for prod vs dev */}
+        <VideoBackground />
+        
+        {/* We'll include StaticBackground but hide it initially */}
+        <div id="static-bg-fallback" style={{ display: 'none', opacity: 0 }}>
+          <StaticBackground />
+        </div>
+        
+        {/* Script to show fallback if video fails to load within 2.5 seconds */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          setTimeout(() => {
+            const video = document.querySelector('video');
+            const fallback = document.getElementById('static-bg-fallback');
+            
+            if (!video || video.readyState < 2 || !video.currentTime) {
+              // Video isn't ready or playing, show fallback
+              if (fallback) {
+                fallback.style.display = 'block';
+                setTimeout(() => {
+                  fallback.style.opacity = '1';
+                  fallback.style.transition = 'opacity 0.5s ease-in';
+                }, 50);
+              }
+            } else {
+              // Video is playing fine
+              if (video.style) video.style.opacity = '1';
+            }
+          }, 2500);
+        `}} />
+
         <Providers>
           <Navbar />
           <main className="min-h-[calc(100vh-4rem)]">

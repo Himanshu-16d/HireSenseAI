@@ -8,9 +8,8 @@ export default function VideoBackground() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   
-  // In production, use a lower res video with preload and data-src pattern
+  // Check if we're in production (Vercel) or development (localhost)
   const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
-  const hasOptimizedVideos = false; // Set this to true after running the optimization scripts
   
   useEffect(() => {
     const video = videoRef.current;
@@ -32,23 +31,18 @@ export default function VideoBackground() {
       video.addEventListener('loadeddata', handleLoadedData);
       video.addEventListener('error', handleError);
 
-      // In production, use progressive loading technique
-      if (isProduction && video.dataset.src) {
-        // Small timeout to ensure other page elements load first
-        setTimeout(() => {
-          video.src = video.dataset.src;
-          video.load();
-        }, 1000);
-      } else {
+      // If in production, add a timeout to handle potentially slow CDN loading
+      const playTimeout = setTimeout(() => {
         // Play the video with error handling
         video.play().catch(error => {
           console.error("Video playback failed:", error);
           setVideoError(true);
         });
-      }
+      }, isProduction ? 1000 : 0);  // Short delay in production
 
       // Clean up
       return () => {
+        clearTimeout(playTimeout);
         video.removeEventListener('loadeddata', handleLoadedData);
         video.removeEventListener('error', handleError);
       };
@@ -58,27 +52,29 @@ export default function VideoBackground() {
   return (
     <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none overflow-hidden bg-gradient-to-b from-black to-slate-900">
       {!videoError && (
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster={hasOptimizedVideos ? "/videos/background-poster.jpg" : undefined}
-          preload={isProduction ? "none" : "auto"}
-          className={`w-full h-full object-cover ${isVideoLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
-        >
-          {hasOptimizedVideos ? (
-            <>
-              {/* Optimized video sources - WebM first for better performance */}
-              <source src="/videos/background.webm" type="video/webm" />
-              <source src="/videos/background.mp4" type="video/mp4" />
-            </>
-          ) : (
-            // Original video source
-            <source src="/Background.mp4" type="video/mp4" />
-          )}
-        </video>
+        <>
+          {/* Use videos from a reliable CDN for production instead of local files */}
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload={isProduction ? "metadata" : "auto"}
+            className={`w-full h-full object-cover ${isVideoLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+          >
+            {isProduction ? (
+              // In production, use an online video that is optimized for web delivery
+              <source 
+                src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-city-at-night-11748-large.mp4" 
+                type="video/mp4" 
+              />
+            ) : (
+              // In development, use local video
+              <source src="/Background.mp4" type="video/mp4" />
+            )}
+          </video>
+        </>
       )}
       {videoError && (
         <div className="w-full h-full">
