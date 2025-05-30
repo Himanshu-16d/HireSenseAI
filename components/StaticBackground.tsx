@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * @deprecated - This component is no longer used. Use ImageBackground instead.
+ * DO NOT USE THIS COMPONENT - It has been superseded by the ImageBackground component
+ * which uses a simpler, more reliable approach for production deployments.
+ */
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 

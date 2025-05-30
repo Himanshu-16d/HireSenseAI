@@ -21,8 +21,7 @@ export default function HomePage() {
               powered by AI. Create, optimize, and find your dream job with
               intelligent tools.
             </p>
-          </div>
-          <div className="flex flex-col md:flex-row gap-4 w-full justify-center mt-4">
+          </div>          <div className="flex flex-col md:flex-row gap-4 w-full justify-center mt-4">
             <Link href="/resume-builder" className="w-full md:w-auto">
               <Button
                 size="lg"
@@ -40,16 +39,6 @@ export default function HomePage() {
               >
                 <Briefcase className="h-5 w-5" />
                 Find Jobs
-              </Button>
-            </Link>
-            <Link href="/job-description" className="w-full md:w-auto">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full md:w-auto flex items-center gap-2"
-              >
-                <FileCode className="h-5 w-5" />
-                Generate Job Descriptions
               </Button>
             </Link>
           </div>

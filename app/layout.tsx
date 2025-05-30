@@ -24,6 +24,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="preload"
+          href="/Background.png"
+          as="image"
+          fetchpriority="high"
+        />
+      </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
         <BackgroundWrapper />
 

@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * @deprecated - This component is no longer used. Use ImageBackground instead.
+ * DO NOT USE THIS COMPONENT - It has been replaced with a static image background 
+ * due to issues with video playback in Vercel deployments.
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 

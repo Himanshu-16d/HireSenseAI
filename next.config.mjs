@@ -10,7 +10,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [],
+    minimumCacheTTL: 31536000,
+    dangerouslyAllowSVG: false,
   },
   // Allow large file loading and specify video as an allowed asset
   assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',

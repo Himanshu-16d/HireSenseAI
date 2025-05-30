@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * @deprecated - This component is no longer used. Use ImageBackground instead.
+ * DO NOT USE THIS COMPONENT - It has been replaced with a static image background 
+ * for better performance and compatibility with Vercel deployments.
+ */
 import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
