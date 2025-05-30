@@ -5,8 +5,7 @@
     "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
     "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
     "NODE_ENV": "production"
-  },
-  "build": {    "env": {      "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
+  },  "build": {    "env": {      "NEXT_PUBLIC_APP_URL": "https://hire-sense-ai-vert.vercel.app",
       "NEXTAUTH_URL": "https://hire-sense-ai-vert.vercel.app",
       "PRISMA_GENERATE": "true",
       "NODE_ENV": "production"

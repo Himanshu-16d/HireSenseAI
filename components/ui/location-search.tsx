@@ -21,28 +21,40 @@ interface Location {
   };
 }
 
-interface OpenCageResult {
-  formatted: string;
-  components: {
-    country?: string;
-    state?: string;
-    city?: string;
-    town?: string;
-    village?: string;
+interface GooglePlacePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
   };
-  geometry: {
-    lat: number;
-    lng: number;
-  };
+  terms: Array<{
+    offset: number;
+    value: string;
+  }>;
 }
 
-interface OpenCageResponse {
-  status: {
-    code: number;
-    message: string;
+interface GooglePlacesResponse {
+  predictions: GooglePlacePrediction[];
+  status: string;
+}
+
+interface GooglePlaceDetails {
+  result: {
+    name: string;
+    address_components: Array<{
+      long_name: string;
+      short_name: string;
+      types: string[];
+    }>;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      }
+    }
   };
-  results: OpenCageResult[];
-  total_results: number;
+  status: string;
 }
 
 const MOCK_LOCATIONS: Location[] = [
@@ -86,7 +98,6 @@ export function LocationSearch({
   const [search, setSearch] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchLocations = async () => {
       if (search.length < 2) {
@@ -94,47 +105,77 @@ export function LocationSearch({
         return;
       }
       
-      try {
-        const apiKey = process.env.NEXT_PUBLIC_OPENCAGE_KEY;
-        if (!apiKey) {
-          throw new Error('Location search unavailable (API key missing)');
-        }
-
-        const response = await fetch(
-          `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(search)}&key=${apiKey}&limit=10&no_annotations=1&min_confidence=5`
+      try {        // Use our server API route to fetch place predictions
+        const autocompleteResponse = await fetch(
+          `/api/location-search?query=${encodeURIComponent(search)}&type=autocomplete`
         );
         
-        const data: OpenCageResponse = await response.json();
+        if (!autocompleteResponse.ok) {
+          throw new Error(`HTTP error! status: ${autocompleteResponse.status}`);
+        }
+        
+        const autocompleteData: GooglePlacesResponse = await autocompleteResponse.json();
 
-        if (data.status?.code === 401 || data.status?.code === 403) {
+        if (autocompleteData.status === 'REQUEST_DENIED' || autocompleteData.status === 'INVALID_REQUEST') {
           throw new Error('Location search unavailable (API key invalid)');
         }
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        if (!data.results || !Array.isArray(data.results)) {
+        if (!autocompleteData.predictions || !Array.isArray(autocompleteData.predictions)) {
           throw new Error('Invalid API response format');
         }
 
-        const mappedLocations = data.results.map((result: OpenCageResult) => ({
-          id: result.formatted,
-          name: result.formatted,
-          country: result.components?.country || "",
-          state: result.components?.state || "",
-          city: result.components?.city || result.components?.town || result.components?.village || "",
-          coordinates: {
-            lat: result.geometry?.lat || 0,
-            lon: result.geometry?.lng || 0
-          }
-        }));
+        // Process each prediction to get full details
+        const mappedLocations = await Promise.all(
+          autocompleteData.predictions.slice(0, 5).map(async (prediction: GooglePlacePrediction) => {
+            try {
+              // Get place details through our server API route
+              const detailsResponse = await fetch(
+                `/api/location-search?type=details&placeId=${prediction.place_id}`
+              );
+              
+              if (!detailsResponse.ok) {
+                return null;
+              }
+              
+              const detailsData: GooglePlaceDetails = await detailsResponse.json();
+              
+              if (!detailsResponse.ok || detailsData.status !== 'OK') {
+                return null;
+              }
+              
+              // Extract country, state, and city from address components
+              const addressComponents = detailsData.result.address_components || [];
+              const country = addressComponents.find(comp => comp.types.includes('country'))?.long_name || '';
+              const state = addressComponents.find(comp => comp.types.includes('administrative_area_level_1'))?.long_name || '';
+              const city = addressComponents.find(comp => 
+                comp.types.includes('locality') || 
+                comp.types.includes('administrative_area_level_2')
+              )?.long_name || prediction.structured_formatting.main_text;
+              
+              return {
+                id: prediction.place_id,
+                name: prediction.description,
+                country: country,
+                state: state,
+                city: city,
+                coordinates: {
+                  lat: detailsData.result.geometry.location.lat,
+                  lon: detailsData.result.geometry.location.lng
+                }
+              };
+            } catch (error) {
+              console.error("Error fetching place details:", error);
+              return null;
+            }
+          })
+        );
 
-        if (mappedLocations.length === 0) {
+        // Filter out any null values from failed requests
+        const validLocations = mappedLocations.filter(location => location !== null) as Location[];        if (validLocations.length === 0) {
           setLocations([]);
           setError('No locations found');
         } else {
-          setLocations(mappedLocations);
+          setLocations(validLocations);
           setError(null);
         }
       } catch (error) {

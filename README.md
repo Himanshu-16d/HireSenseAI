@@ -26,6 +26,7 @@ This project combines the power of AI and real-time data to streamline the job s
 - **React** – Frontend UI with real-time interactivity
 - **MongoDB** – Stores user profiles and resume data
 - **TailwindCSS** – Clean, responsive styling
+- **Google Places API** – Location search and geocoding for localized job matching
 
 ---
 
