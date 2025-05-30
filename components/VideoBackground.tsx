@@ -7,11 +7,23 @@ export default function VideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
-  // Check if we're in production (Vercel) or development (localhost)
-  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+  // Check if we're in production only after component is mounted
+  const [isProduction, setIsProduction] = useState(false);
   
+  // Wait until after hydration to determine environment
   useEffect(() => {
+    setIsMounted(true);
+    setIsProduction(window.location.hostname !== 'localhost' && 
+                   window.location.hostname !== '127.0.0.1');
+  }, []);
+  
+  // Only run video logic after component is mounted to avoid hydration issues
+  useEffect(() => {
+    // Skip if component isn't mounted yet
+    if (!isMounted) return;
+    
     const video = videoRef.current;
     
     if (video) {
@@ -47,7 +59,12 @@ export default function VideoBackground() {
         video.removeEventListener('error', handleError);
       };
     }
-  }, [isProduction]);
+  }, [isProduction, isMounted]);
+
+  // Don't render anything on server side or during initial hydration
+  if (!isMounted) {
+    return <div className="fixed inset-0 -z-10 w-full h-full bg-black"></div>;
+  }
 
   return (
     <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none overflow-hidden bg-gradient-to-b from-black to-slate-900">
