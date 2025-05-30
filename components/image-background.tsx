@@ -2,17 +2,28 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
-export default function ImageBackground() {
+interface ImageBackgroundProps {
+  backgroundType?: 'home' | 'other';
+}
+
+export default function ImageBackground({ backgroundType }: ImageBackgroundProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const pathname = usePathname();
+  
+  // Determine which background to use based on the path or the prop
+  const isHomePage = pathname === '/';
+  const useHomeBackground = backgroundType === 'home' || (backgroundType === undefined && isHomePage);
+  const backgroundImage = useHomeBackground ? '/Background.png' : '/Background(2).png';
   
   useEffect(() => {
     setIsMounted(true);
     
     // Preload the background image
     const preloadImage = new window.Image();
-    preloadImage.src = '/Background.png';
-  }, []);
+    preloadImage.src = backgroundImage;
+  }, [backgroundImage]);
   
   // Don't render anything until after hydration to prevent flickering
   if (!isMounted) {
@@ -23,7 +34,7 @@ export default function ImageBackground() {
     <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none overflow-hidden">
       <div className="absolute inset-0">
         <Image 
-          src="/Background.png" 
+          src={backgroundImage} 
           alt="Background" 
           fill 
           priority

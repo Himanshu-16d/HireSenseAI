@@ -25,11 +25,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Preload both background images for faster page transitions */}
         <link
           rel="preload"
           href="/Background.png"
           as="image"
           fetchpriority="high"
+        />
+        <link
+          rel="preload"
+          href="/Background(2).png"
+          as="image"
+          fetchpriority="low"
         />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>
