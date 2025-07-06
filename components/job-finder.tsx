@@ -310,25 +310,6 @@ export default function JobFinder() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Resume Score</CardTitle>
-              <CardDescription>AI-powered analysis</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-full border-8 border-primary/20 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-primary">92%</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center text-sm text-muted-foreground">
-                Your resume matches well with the job requirements
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Recent Searches</CardTitle>
               <CardDescription>Your recent job searches</CardDescription>
             </CardHeader>

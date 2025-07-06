@@ -108,7 +108,7 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold">Personal Dashboard</h3>
               </div>
               <p className="text-muted-foreground text-base">
-                Track your resume score history and view saved or applied jobs in one place.
+                Track your resume history and view saved or applied jobs in one place.
               </p>
             </div>
           </div>

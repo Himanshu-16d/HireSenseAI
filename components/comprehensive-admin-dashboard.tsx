@@ -345,28 +345,6 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg Resume Score</CardTitle>
-                    <Star className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading...
-                        </div>
-                      ) : (
-                        analytics?.avgResumeScore ? `${analytics.avgResumeScore}%` : 'N/A'
-                      )}
-                    </div>
-                    {analytics?.avgResumeScore && (
-                      <Progress value={analytics.avgResumeScore} className="mt-2" />
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">AI Model Status</CardTitle>
                     <BrainCircuit className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
@@ -544,21 +522,6 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="score-filter">Resume Score Range</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All scores" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All scores</SelectItem>
-                          <SelectItem value="90-100">90-100%</SelectItem>
-                          <SelectItem value="80-89">80-89%</SelectItem>
-                          <SelectItem value="70-79">70-79%</SelectItem>
-                          <SelectItem value="0-69">Below 70%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
                       <Label htmlFor="status-filter">Status</Label>
                       <Select>
                         <SelectTrigger>
@@ -592,7 +555,6 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                         <TableRow>
                           <TableHead>User</TableHead>
                           <TableHead>Role</TableHead>
-                          <TableHead>Resume Score</TableHead>
                           <TableHead>Applications</TableHead>
                           <TableHead>Last Active</TableHead>
                           <TableHead>Status</TableHead>
@@ -612,16 +574,6 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                               <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                                 {user.role}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {user.resumeScore ? (
-                                <div className="flex items-center gap-2">
-                                  <Progress value={user.resumeScore} className="w-16" />
-                                  <span className="text-sm">{user.resumeScore}%</span>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">No resume</span>
-                              )}
                             </TableCell>
                             <TableCell>{user.jobApplications || 0}</TableCell>
                             <TableCell>

@@ -126,14 +126,6 @@ export default function ResumePreview({ resumeData, feedback, score, jobTarget, 
         <div className="w-full md:w-1/3 space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-center mb-4">
-                <h3 className="text-xl font-semibold">Resume Score</h3>
-                <div className="mt-4 mb-2">
-                  <Progress value={score || 0} className="h-3" />
-                </div>
-                <p className="text-2xl font-bold">{score || 0}/100</p>
-              </div>
-
               <div className="mt-4">
                 <h4 className="font-medium mb-2">Target Job</h4>
                 <p className="text-sm">
@@ -143,12 +135,6 @@ export default function ResumePreview({ resumeData, feedback, score, jobTarget, 
               </div>
             </CardContent>
           </Card>
-
-          <Alert variant={score && score >= 70 ? "default" : "destructive"}>
-            {score && score >= 70 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-            <AlertTitle>{score && score >= 70 ? "Good Match" : "Needs Improvement"}</AlertTitle>
-            <AlertDescription className="mt-2 text-sm whitespace-pre-line">{feedback}</AlertDescription>
-          </Alert>
 
           {atsFeedback && (
             <ATSResumePreview
