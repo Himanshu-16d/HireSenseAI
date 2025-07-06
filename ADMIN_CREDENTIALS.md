@@ -2,11 +2,26 @@
 
 ## Current Admin Credentials
 
-### Primary Admin User
-- **Email**: `admin@hiresenseai.com`
-- **Password**: `HireSense2025!`
-- **Name**: `HireSense Admin`
-- **Role**: `admin`
+### Team Admin Users
+1. **Himanshu**
+   - **Email**: `himanshu@hiresense.ai`
+   - **Password**: `Himanshu@pseudocoders25`
+   - **Role**: `admin`
+
+2. **Rishika**
+   - **Email**: `rishika@hiresense.ai`
+   - **Password**: `Rishika@pseudocoders25`
+   - **Role**: `admin`
+
+3. **Smrati**
+   - **Email**: `smrati@hiresense.ai`
+   - **Password**: `Smrati@pseudocoders25`
+   - **Role**: `admin`
+
+4. **Shikha**
+   - **Email**: `shikha@hiresense.ai`
+   - **Password**: `Shikha@pseudocoders25`
+   - **Role**: `admin`
 
 ## Admin Access Points
 
@@ -35,6 +50,12 @@ pnpm run admin:update
 To create a new admin user or update existing ones interactively:
 ```bash
 pnpm run admin:create
+```
+
+### Setup Multiple Admin Users
+To setup all team admin users at once:
+```bash
+pnpm run admin:setup-multiple
 ```
 
 ### Test Admin Login

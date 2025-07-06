@@ -25,6 +25,7 @@
     "deploy:vercel": "bash scripts/deploy-vercel.sh",
     "admin:create": "node scripts/create-admin.js",
     "admin:update": "node scripts/update-admin.js",
+    "admin:setup-multiple": "node scripts/setup-multiple-admins.js",
     "db:setup-filess": "echo 'Please run the SQL in migrations/filess-manual-setup.sql in your Filess.io console'"
   },
   "dependencies": {
