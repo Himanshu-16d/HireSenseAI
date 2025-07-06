@@ -82,7 +82,7 @@ export default function PrivacyPolicy() {
         </p>
         <p>We may share your data with:</p>
         <ul>
-          <li>Third-Party APIs and Services (e.g., Adzuna for job search)</li>
+          <li>Third-Party APIs and Services (e.g., JSsearch via RapidAPI for job search)</li>
           <li>Service providers who assist in maintaining our platform (e.g., AI model APIs)</li>
           <li>Employers or job platforms only if you choose to apply or opt-in to share your data</li>
           <li>Law enforcement or regulatory authorities, when legally required</li>

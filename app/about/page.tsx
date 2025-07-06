@@ -48,7 +48,7 @@ export default function AboutPage() {
             </div>
             <h3 className="text-lg font-semibold mb-2">Real-Time Job Search</h3>
             <p className="text-sm text-muted-foreground">
-              Integration with Adzuna for real-time job listings, matching recommendations, and location-based filtering.
+              Integration with JSsearch via RapidAPI for real-time job listings, matching recommendations, and location-based filtering.
             </p>
           </div>
           <div className="p-4 bg-card rounded-lg">
@@ -76,7 +76,7 @@ export default function AboutPage() {
                 <li>• Frontend: React + TypeScript + Tailwind CSS</li>
                 <li>• Backend: Python & Node.js for modular and fast APIs</li>
                 <li>• AI/NLP: DeepSeek-R1-Distill-LLaMA-8B</li>
-                <li>• Data Source: Adzuna API for job listings</li>
+                <li>• Data Source: JSsearch API via RapidAPI for job listings</li>
                 <li>• Deployment: Scalable infrastructure</li>
               </ul>
             </div>

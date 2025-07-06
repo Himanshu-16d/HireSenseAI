@@ -9,8 +9,8 @@ export default async function handler(req, res) {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': 'ba4bbabc0emshae9e858121c9906p1ae9bejsn0f6bf1d21e25',
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+        'X-RapidAPI-Host': process.env.RAPIDAPI_HOST,
       },
     });
     const data = await response.json();
@@ -18,4 +18,4 @@ export default async function handler(req, res) {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-} 
+}

@@ -97,7 +97,7 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold">Job Search Using Resume</h3>
               </div>
               <p className="text-muted-foreground text-base">
-                Instant job matches based on your resume content using real-time data from Adzuna.
+                Instant job matches based on your resume content using real-time data from JSsearch.
               </p>
             </div>
             <div className="bg-card/80 backdrop-blur-sm p-8 rounded-xl shadow-md h-full min-h-[250px] flex flex-col">

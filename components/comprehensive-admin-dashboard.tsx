@@ -54,7 +54,7 @@ interface JobListing {
   location: string
   category: string
   salary?: string
-  source: 'adzuna' | 'manual'
+  source: 'jsearch' | 'manual'
   status: 'approved' | 'pending' | 'rejected'
   createdAt: Date
 }
@@ -762,12 +762,12 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold">Job Listings Management</h2>
-                  <p className="text-muted-foreground">Manage jobs from Adzuna API and custom postings</p>
+                  <p className="text-muted-foreground">Manage jobs from JSsearch API and custom postings</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm">
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Sync Adzuna
+                    Sync JSsearch
                   </Button>
                   <Button size="sm">
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -812,7 +812,7 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Sources</SelectItem>
-                          <SelectItem value="adzuna">Adzuna API</SelectItem>
+                          <SelectItem value="jsearch">JSsearch API</SelectItem>
                           <SelectItem value="manual">Manual Entry</SelectItem>
                         </SelectContent>
                       </Select>
@@ -878,7 +878,7 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                             <TableCell>{job.category}</TableCell>
                             <TableCell>{job.salary || 'Not specified'}</TableCell>
                             <TableCell>
-                              <Badge variant={job.source === 'adzuna' ? 'default' : 'secondary'}>
+                              <Badge variant={job.source === 'jsearch' ? 'default' : 'secondary'}>
                                 {job.source}
                               </Badge>
                             </TableCell>
@@ -911,11 +911,11 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                     <div className="text-center py-12 text-muted-foreground">
                       <Briefcase className="h-16 w-16 mx-auto mb-4 opacity-50" />
                       <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-                      <p>Job listings will appear here once fetched from Adzuna API or manually added</p>
+                      <p>Job listings will appear here once fetched from JSsearch API or manually added</p>
                       <div className="mt-4 flex gap-2 justify-center">
                         <Button variant="outline" size="sm">
                           <RefreshCw className="h-4 w-4 mr-2" />
-                          Sync Adzuna
+                          Sync JSsearch
                         </Button>
                         <Button size="sm">
                           <UserPlus className="h-4 w-4 mr-2" />
@@ -927,10 +927,10 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                 </CardContent>
               </Card>
 
-              {/* Adzuna Settings */}
+              {/* JSsearch Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Adzuna API Settings</CardTitle>
+                  <CardTitle>JSsearch API Settings</CardTitle>
                   <CardDescription>Configure automatic job fetching</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1480,7 +1480,7 @@ export default function ComprehensiveAdminDashboard({ adminSession }: AdminDashb
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Adzuna API Key</Label>
+                      <Label>RapidAPI Key</Label>
                       <Input type="password" placeholder="Enter API key..." />
                     </div>
                     <div>
