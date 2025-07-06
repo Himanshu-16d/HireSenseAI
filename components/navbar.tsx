@@ -9,11 +9,22 @@ import { useSession, signIn } from 'next-auth/react'
 import { useToast } from '@/components/ui/use-toast'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const { toast } = useToast()
+  const [isUserAdmin, setIsUserAdmin] = useState(false)
+
+  useEffect(() => {
+    // Check if user is admin based on role
+    if (session?.user?.role === "admin") {
+      setIsUserAdmin(true)
+    } else {
+      setIsUserAdmin(false)
+    }
+  }, [session])
 
   const handleProtectedRoute = () => {
     if (!session) {
@@ -62,7 +73,18 @@ export function Navbar() {
               onClick={() => !session && handleProtectedRoute()}
             >
               Job Finder
-            </Link>            <Link 
+            </Link>
+            <Link 
+              href={session ? "/job-description" : "/login?redirect=/job-description"}
+              className={cn(
+                "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                pathname === "/job-description" && "text-primary font-semibold bg-primary/10"
+              )}
+              onClick={() => !session && handleProtectedRoute()}
+            >
+              Job Description
+            </Link>
+            <Link 
               href="/about" 
               className={cn(
                 "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
@@ -71,6 +93,17 @@ export function Navbar() {
             >
               About
             </Link>
+            {isUserAdmin && (
+              <Link 
+                href="/admin" 
+                className={cn(
+                  "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+                  pathname === "/admin" && "text-primary font-semibold bg-primary/10"
+                )}
+              >
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
           {/* Right: Actions */}
@@ -78,9 +111,14 @@ export function Navbar() {
           {status === 'authenticated' ? (
             <UserNav />
           ) : (
-            <Button onClick={() => signIn()} variant="default" className="font-semibold">
-              Sign in
-            </Button>
+            <>
+              <Button variant="ghost" asChild className="text-xs">
+                <Link href="/admin/login">Admin</Link>
+              </Button>
+              <Button onClick={() => signIn()} variant="default" className="font-semibold">
+                Sign in
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -108,6 +146,16 @@ export function Navbar() {
           Job Finder
         </Link>
         <Link 
+          href={session ? "/job-description" : "/login?redirect=/job-description"}
+          className={cn(
+            "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+            pathname === "/job-description" && "text-primary font-semibold bg-primary/10"
+          )}
+          onClick={() => !session && handleProtectedRoute()}
+        >
+          Job Description
+        </Link>
+        <Link 
           href={session ? "/job-insights" : "/login?redirect=/job-insights"}
           className={cn(
             "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
@@ -126,6 +174,17 @@ export function Navbar() {
         >
           About
         </Link>
+        {isUserAdmin && (
+          <Link 
+            href="/admin"
+            className={cn(
+              "font-medium text-base px-3 py-2 rounded transition-colors hover:bg-primary/10 hover:text-primary",
+              pathname === "/admin" && "text-primary font-semibold bg-primary/10"
+            )}
+          >
+            Admin
+          </Link>
+        )}
         <Link 
           href="/chat-demo"
           className={cn(

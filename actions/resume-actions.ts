@@ -9,7 +9,7 @@ import {
   callGroqAPI,
   processInParallel,
   cleanResponseText
-} from "@/lib/groq-client"
+} from "@/lib/ai-client"
 
 export async function enhanceResume(resumeData: ResumeData, jobTarget: JobTarget, template: string = "template1"): Promise<ResumeEnhancementResult> {
   try {
@@ -85,7 +85,7 @@ export async function scoreResume(
     // Get headers from request context
     const { headers } = (process as any).experimental?.invokeHeaders() || { headers: undefined }
     
-    // Generate score and feedback using Groq AI
+    // Generate score and feedback using AI
     const response = await callGroqAPI([
       { 
         role: "system", 
@@ -150,7 +150,7 @@ export async function parseResume(resumeText: string): Promise<ResumeData> {
     const truncatedText = truncateResumeText(resumeText, 4000)
     console.log(`Original resume length: ${resumeText.length}, Truncated length: ${truncatedText.length}`)
 
-    // Generate parsed resume using Groq AI
+    // Generate parsed resume using AI
     const response = await callGroqAPI([
       { 
         role: "system", 
@@ -373,7 +373,7 @@ function getDefaultResumeData(): ResumeData {
 }
 
 export async function analyzeFeedback(resumeData: any) {
-  // Generate score and feedback using Groq AI
+  // Generate score and feedback using AI
   const prompt = RESUME_ANALYSIS_PROMPT.replace("{resumeData}", JSON.stringify(resumeData))
   
   const response = await callGroqAPI([

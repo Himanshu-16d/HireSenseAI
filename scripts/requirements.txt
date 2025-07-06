@@ -1,0 +1,10 @@
+# Python dependencies for NVIDIA AI integration
+requests>=2.31.0
+dataclasses>=0.6  # For Python 3.6 compatibility (built-in for 3.7+)
+typing-extensions>=4.0.0  # For better type hints
+python-dotenv>=1.0.0  # For environment variable management
+
+# Flask API server dependencies
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+gunicorn>=21.0.0  # For production deployment

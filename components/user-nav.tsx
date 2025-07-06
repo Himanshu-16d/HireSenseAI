@@ -41,6 +41,11 @@ export function UserNav() {
             <p className="text-xs leading-none text-muted-foreground">
               {session.user.email}
             </p>
+            {session.user.role && (
+              <p className="text-xs leading-none text-primary font-medium capitalize">
+                {session.user.role === "recruiter" ? "Recruiter" : "Job Seeker"}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

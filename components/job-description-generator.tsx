@@ -22,8 +22,7 @@ export function JobDescriptionGenerator() {
     companyName: "",
     industry: "",
     location: "",
-    companySize: "",
-    companyDescription: ""
+    companySize: ""
   })
 
   const [jobDetails, setJobDetails] = useState<JobDetails>({
@@ -76,7 +75,6 @@ export function JobDescriptionGenerator() {
     const requiredFields = {
       companyName: "Company name",
       location: "Location",
-      companyDescription: "Company description",
       title: "Job title",
       department: "Department"
     };
@@ -168,16 +166,6 @@ Ideal candidates excel in problem-solving, possess strong technical skills, and 
                     required
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="companyDescription">Company Description</Label>
-                <Textarea
-                  id="companyDescription"
-                  value={companyDetails.companyDescription}
-                  onChange={(e) => handleCompanyDetailsChange("companyDescription", e.target.value)}
-                  placeholder="Brief description of the company..."
-                  required
-                />
               </div>
             </div>
 

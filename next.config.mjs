@@ -68,16 +68,51 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    // Only add rewrites for development - Vercel doesn't need them
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/ai/:path*',
+          destination: 'http://localhost:8003/v1/:path*',
+        },
+        {
+          source: '/api/health',
+          destination: 'http://localhost:8003/health',
+        }
+      ];
+    }
+    return [];
+  },
+  // Vercel deployment optimizations
+  output: 'standalone',
+  poweredByHeader: false,
+  generateEtags: false,
+  compress: true,
+  // Security headers for production
+  async headers() {
     return [
       {
-        source: '/api/ai/:path*',
-        destination: 'http://localhost:8003/v1/:path*',
-      },
-      {
-        source: '/api/health',
-        destination: 'http://localhost:8003/health',
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          }
+        ]
       }
-    ];
+    ]
   },
 }
 

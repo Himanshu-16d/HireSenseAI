@@ -3,8 +3,7 @@ import type { NextRequest } from 'next/server';
 
 export async function validateApiConfig() {
   const requiredEnvVars = {
-    GROQ_API_KEY: process.env.GROQ_API_KEY,
-    GROQ_API_URL: process.env.GROQ_API_URL,
+    NVIDIA_API_KEY: process.env.NVIDIA_API_KEY,
   };
 
   // Check for missing environment variables

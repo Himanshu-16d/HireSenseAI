@@ -8,6 +8,7 @@ export async function registerUser(data: {
   lastName: string
   email: string
   password: string
+  role?: string
 }) {
   try {
     // Check if email already exists
@@ -29,6 +30,7 @@ export async function registerUser(data: {
         data: {
           name: `${data.firstName} ${data.lastName}`,
           email: data.email,
+          role: data.role || "candidate",
         },
       })
 
@@ -53,6 +55,7 @@ export async function registerUser(data: {
         id: result.id,
         name: result.name,
         email: result.email,
+        role: result.role,
       },
     }
   } catch (error) {

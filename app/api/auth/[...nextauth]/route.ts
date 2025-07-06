@@ -13,6 +13,7 @@ const handler = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -46,10 +47,19 @@ const handler = NextAuth({
             return null
           }
 
+          // Update user role if provided
+          if (credentials.role && credentials.role !== user.role) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: credentials.role }
+            })
+          }
+
           return {
             id: user.id,
             email: user.email,
             name: user.name,
+            role: credentials.role || user.role,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -94,13 +104,22 @@ const handler = NextAuth({
             include: { accounts: true }
           })
 
-          if (!existingUser) {
+          if (existingUser) {
+            // Check if existing user is a recruiter - block Google sign in for recruiters
+            if (existingUser.role === "recruiter") {
+              console.log("Blocking Google sign in for recruiter:", existingUser.email)
+              return false // Block the sign in
+            }
+            console.log("Existing user found:", existingUser)
+          } else {
             console.log("Creating new user for Google sign in")
+            // Only allow candidate role for new Google users
             await prisma.user.create({
               data: {
                 email: user.email!,
                 name: user.name,
                 image: user.image,
+                role: "candidate",
                 accounts: {
                   create: {
                     type: "oauth",
@@ -114,8 +133,6 @@ const handler = NextAuth({
                 }
               }
             })
-          } else {
-            console.log("Existing user found:", existingUser)
           }
         }
         return true
@@ -129,6 +146,7 @@ const handler = NextAuth({
         console.log("Session callback:", { session, token })
         if (session.user) {
           session.user.id = token.sub
+          session.user.role = token.role as string
         }
         return session
       } catch (error) {
@@ -141,6 +159,17 @@ const handler = NextAuth({
         console.log("JWT callback:", { token, user, account })
         if (user) {
           token.id = user.id
+          token.role = (user as any).role
+        }
+        // If token doesn't have role, fetch it from database
+        if (!token.role && token.sub) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true }
+          })
+          if (dbUser) {
+            token.role = dbUser.role
+          }
         }
         return token
       } catch (error) {
@@ -159,7 +188,6 @@ const handler = NextAuth({
   },
   debug: true,
   secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,

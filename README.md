@@ -3,7 +3,7 @@
 
 # 🧠 AI-Powered Resume Builder & Job Finder 🚀
 
-An intelligent platform that helps users create optimized resumes and matches them with the best-fit job opportunities — powered by **NVIDIA's Mixtral** for advanced AI inference and **Fluvio Tracks** for real-time data streaming.
+An intelligent platform that helps users create optimized resumes and matches them with the best-fit job opportunities — powered by **NVIDIA's DeepSeek-R1-Distill-Llama-8B** for advanced AI inference and **Fluvio Tracks** for real-time data streaming.
 
 ## Problem statement
 Streamline the job search process with AI-powered tools and real-time insights
@@ -20,7 +20,7 @@ This project combines the power of AI and real-time data to streamline the job s
 
 ## 🛠️ Built With
 
-- **NVIDIA AI** – Advanced language model inference for intelligent resume and job description generation
+- **NVIDIA DeepSeek AI** – Advanced language model inference using DeepSeek-R1-Distill-Llama-8B for intelligent resume and job description generation
 - **Fluvio Tracks** – High-performance event streaming platform to deliver live job feeds and notifications
 - **Node.js / Express** – Backend REST API
 - **React** – Frontend UI with real-time interactivity
@@ -49,7 +49,7 @@ This project combines the power of AI and real-time data to streamline the job s
 ### Prerequisites
 
 - Node.js ≥ 18
-- NVIDIA AI Foundation Models API access
+- NVIDIA AI API access (for DeepSeek-R1-Distill-Llama-8B model)
 - PostgreSQL database
 - Redis (optional, for caching)
 - Fluvio CLI installed and configured
@@ -58,7 +58,7 @@ This project combines the power of AI and real-time data to streamline the job s
 
 ## API Reference
 
-1. NVIDIA AI Foundation Models
+1. NVIDIA AI (DeepSeek-R1-Distill-Llama-8B)
 2. LinkedIn
 3. Google
 4. Railway

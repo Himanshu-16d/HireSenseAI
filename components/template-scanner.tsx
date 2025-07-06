@@ -65,7 +65,7 @@ export function TemplateScanner({ resumeData, onEnhancedData }: TemplateScannerP
 
     setLoading(true);
     try {
-      // Here we would call the NVIDIA API to analyze the template and enhance the resume
+      // Here we would call the AI API to analyze the template and enhance the resume
       const enhancedData = await enhanceResumeWithTemplate(resumeData, selectedTemplate.id);
       onEnhancedData?.(enhancedData);
       
@@ -180,7 +180,7 @@ Please enhance this resume by:
 Return the enhanced resume data in the same JSON structure.
 `;
 
-  // Call NVIDIA API to enhance the resume
+  // Call AI API to enhance the resume
   const response = await fetch("/api/enhance-resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

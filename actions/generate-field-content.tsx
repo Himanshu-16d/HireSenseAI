@@ -1,5 +1,5 @@
 "use server";
-import { callGroqAPI, cleanResponseText } from "@/lib/groq-client";
+import { callGroqAPI, cleanResponseText } from "@/lib/ai-client";
 import { ALL_TECHNOLOGIES } from "@/lib/technologies";
 
 export async function generateFieldContent({

@@ -30,13 +30,13 @@ export default function RootLayout({
           rel="preload"
           href="/Background.png"
           as="image"
-          fetchpriority="high"
+          fetchPriority="high"
         />
         <link
           rel="preload"
           href="/Background(2).png"
           as="image"
-          fetchpriority="low"
+          fetchPriority="low"
         />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans`}>

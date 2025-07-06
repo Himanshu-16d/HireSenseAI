@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
-import { callGroqAPI } from "@/lib/groq-client";
-import { MODELS } from "@/lib/groq-client";
+import { callGroqAPI } from "@/lib/ai-client";
+import { MODELS } from "@/lib/ai-client";
 
 export async function GET() {
   try {
     // Get environment information
     const config = {
-      apiUrl: process.env.GROQ_API_URL,
-      hasApiKey: !!process.env.GROQ_API_KEY,
+      apiUrl: "NVIDIA DeepSeek AI Endpoints",
+      hasApiKey: !!process.env.NVIDIA_API_KEY,
       nodeEnv: process.env.NODE_ENV,
     };
 
     // Test API connection
     const testMessage = {
-      role: "user",
-      content: "Test connection to Groq API."
+      role: "user" as const,
+      content: "Test connection to NVIDIA DeepSeek AI API."
     };
 
     try {
