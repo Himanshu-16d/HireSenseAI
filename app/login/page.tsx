@@ -7,11 +7,11 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { signIn, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { Loader2, AlertCircle, Users, User, Briefcase, Eye, EyeOff } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
@@ -307,5 +307,20 @@ export default function LoginPage() {
         )}
       </Card>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 flex items-center justify-center p-4">
+        <div className="flex items-center gap-2 text-white">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
