@@ -9,7 +9,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["HireSenseAI_comeballwe"]
 }
 
 model Account {
@@ -30,7 +29,6 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@schema("HireSenseAI_comeballwe")
 }
 
 model Session {
@@ -39,8 +37,6 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("HireSenseAI_comeballwe")
 }
 
 model User {
@@ -54,8 +50,6 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
-
-  @@schema("HireSenseAI_comeballwe")
 }
 
 model VerificationToken {
@@ -64,5 +58,4 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@schema("HireSenseAI_comeballwe")
 }
