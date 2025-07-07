@@ -86,25 +86,10 @@ export const searchJobs = async (params: JobSearchParams) => {
       }
     }
     
-    // If no jobs found, return a mock job
+    // Return the first matching job or null if none found
     if (jobs.length === 0) {
-      const mockJob: Job = {
-        id: Date.now().toString(),
-        title: params.title || 'Software Engineer',
-        company: 'Tech Corp',
-        location: params.location || 'Remote',
-        description: 'Exciting opportunity for a skilled developer...',
-        url: 'https://example.com/job',
-        postedDate: new Date().toISOString(),
-        salary: '$100,000 - $150,000',
-        skills: params.keywords?.split(',').map(k => k.trim()).filter(Boolean) || [],
-        matchScore: 85,
-        source: 'linkedin',
-        commuteTime: 0,
-        distance: 0
-      };
-      await produceJobListing(mockJob);
-      return mockJob;
+      console.log('No jobs found for search parameters:', params);
+      return null;
     }
     
     return jobs[0]; // Return the first matching job

@@ -15,62 +15,27 @@ export const initializeSocket = (server: any) => {
     // Subscribe to job search updates
     socket.on('search-jobs', async (searchParams: JobSearchParams) => {
       try {
-        // Simulate job search (replace with actual job search logic)
-        const mockJobs: Job[] = [
-          {
-            id: '1',
-            title: 'Software Engineer',
-            company: 'Tech Corp',
-            location: 'Remote',
-            description: 'Looking for a skilled software engineer...',
-            url: 'https://example.com/job/1',
-            postedDate: new Date().toISOString(),
-            salary: '$100,000 - $150,000',
-            skills: ['JavaScript', 'TypeScript', 'React'],
-            matchScore: 0.85,
-            source: 'linkedin',
-            commuteTime: 0,
-            distance: 0
-          },
-          {
-            id: '2',
-            title: 'Frontend Developer',
-            company: 'Web Solutions',
-            location: 'New York',
-            description: 'Seeking an experienced frontend developer...',
-            url: 'https://example.com/job/2',
-            postedDate: new Date().toISOString(),
-            salary: '$90,000 - $130,000',
-            skills: ['React', 'Vue', 'CSS'],
-            matchScore: 0.75,
-            source: 'indeed',
-            commuteTime: 30,
-            distance: 5
-          }
-        ];
+        // Use real job search instead of mock data
+        const { searchJobs } = await import('@/lib/job-service');
+        const jobs = await searchJobs(searchParams);
 
         // Send initial results
-        socket.emit('job-results', mockJobs);
+        socket.emit('job-results', jobs);
 
-        // Simulate real-time updates
-        const updateInterval = setInterval(() => {
-          const newJob: Job = {
-            id: Math.random().toString(36).substr(2, 9),
-            title: 'New Job ' + Math.floor(Math.random() * 1000),
-            company: 'Company ' + Math.floor(Math.random() * 1000),
-            location: 'Remote',
-            description: 'New job opportunity...',
-            url: 'https://example.com/job/new',
-            postedDate: new Date().toISOString(),
-            salary: '$80,000 - $120,000',
-            skills: ['JavaScript', 'React', 'Node.js'],
-            matchScore: Math.random(),
-            source: 'other',
-            commuteTime: 0,
-            distance: 0
-          };
-          socket.emit('job-update', newJob);
-        }, 5000);
+        // For real-time updates, you could periodically re-search
+        // or implement a job feed subscription system
+        const updateInterval = setInterval(async () => {
+          try {
+            const updatedJobs = await searchJobs(searchParams);
+            if (updatedJobs.length > jobs.length) {
+              // Send new jobs if found
+              const newJobs = updatedJobs.slice(jobs.length);
+              newJobs.forEach(job => socket.emit('job-update', job));
+            }
+          } catch (error) {
+            console.error('Error in periodic job update:', error);
+          }
+        }, 30000); // Check for updates every 30 seconds
 
         // Clean up interval on disconnect
         socket.on('disconnect', () => {

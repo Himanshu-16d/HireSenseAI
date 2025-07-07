@@ -7,29 +7,33 @@ export async function findJobs(searchParams: JobSearchParams, resumeData: Resume
   try {
     console.log('Starting job search with params:', searchParams);
     
+    // Ensure location defaults to India if not specified
+    const finalSearchParams = {
+      ...searchParams,
+      location: searchParams.location || 'India'
+    };
+    
+    console.log('Final search params with India default:', finalSearchParams);
+    
     // Get the host from headers with fallback
-    const headersList = headers();
-    const host = headersList.get("host") || "localhost:3000";
+    const headersList = await headers();
+    const host = headersList.get("host") || "localhost:3001";
     const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
     
     // Construct the base URL
     const baseUrl = `${protocol}://${host}`;
     
-    // Construct the search URL
-    const searchUrl = new URL(`${baseUrl}/api/jobs`);
-    
-    // Add search parameters
-    if (searchParams.title) searchUrl.searchParams.append('title', searchParams.title);
-    if (searchParams.location) searchUrl.searchParams.append('location', searchParams.location);
-    if (searchParams.keywords) searchUrl.searchParams.append('keywords', searchParams.keywords);
+    // Use the job-search API endpoint for real job data
+    const searchUrl = `${baseUrl}/api/job-search`;
 
-    console.log('Fetching jobs from URL:', searchUrl.toString());
+    console.log('Fetching jobs from URL:', searchUrl);
     
-    const response = await fetch(searchUrl.toString(), {
-      method: 'GET',
+    const response = await fetch(searchUrl, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(finalSearchParams),
     });
     
     if (!response.ok) {
@@ -39,8 +43,8 @@ export async function findJobs(searchParams: JobSearchParams, resumeData: Resume
     const data = await response.json();
     console.log('Received job data:', data);
     
-    if (!data.jobs) {
-      console.warn('No jobs array in response:', data);
+    if (!data.success || !data.jobs) {
+      console.warn('No jobs found or API error:', data);
       return [];
     }
 
@@ -52,23 +56,4 @@ export async function findJobs(searchParams: JobSearchParams, resumeData: Resume
   }
 }
 
-// Helper function to generate mock job listings
-function getMockJobListings(): Job[] {
-  return [
-    {
-      id: '1',
-      title: 'Software Engineer',
-      company: 'Tech Corp',
-      location: 'Remote',
-      description: 'Exciting opportunity for a skilled developer...',
-      url: 'https://example.com/job',
-      postedDate: new Date().toISOString(),
-      salary: '$100,000 - $150,000',
-      skills: ['JavaScript', 'React', 'Node.js'],
-      matchScore: 85,
-      source: 'linkedin',
-      commuteTime: 0,
-      distance: 0
-    }
-  ];
-}
+

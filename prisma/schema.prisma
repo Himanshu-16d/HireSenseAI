@@ -1,4 +1,19 @@
-// This is your Prisma schema file,
+// This is youmodel Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  password          String? @db.Text  // Added for storing hashed passwords for credentials provider
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -9,6 +24,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["HireSenseAI_comeballwe"]
 }
 
 model Account {
@@ -24,11 +40,10 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-  password          String? @db.Text  // Added for storing hashed passwords for credentials provider
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password          String?
 
   @@unique([provider, providerAccountId])
+  @@schema("HireSenseAI_comeballwe")
 }
 
 model Session {
@@ -37,6 +52,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("HireSenseAI_comeballwe")
 }
 
 model User {
@@ -50,6 +67,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+
+  @@schema("HireSenseAI_comeballwe")
 }
 
 model VerificationToken {
@@ -58,4 +77,5 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@schema("HireSenseAI_comeballwe")
 }

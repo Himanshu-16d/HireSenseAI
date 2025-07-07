@@ -29,7 +29,7 @@ interface RecentSearch {
 export default function JobFinder() {
   const [searchParams, setSearchParams] = useState<JobSearchParams>({
     title: "",
-    location: "",
+    location: "India",
     keywords: ""
   })
   const [resumeData, setResumeData] = useState<ResumeData>({

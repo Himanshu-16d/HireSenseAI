@@ -37,22 +37,26 @@ export async function getJobRecommendations(linkedinId: string) {
     // 2. Filter and process the results
     // 3. Return formatted job listings
     
-    // For now, returning mock data
+    // For now, use the real job search API instead of mock data
+    const { searchJobs } = await import('@/lib/job-service');
+    const jobs = await searchJobs({
+      title: 'Software Engineer', // Default search
+      location: '',
+      keywords: 'JavaScript,React,Node.js'
+    });
+    
     return {
       success: true,
-      jobs: [
-        {
-          id: "1",
-          title: "Senior Software Engineer",
-          company: "Tech Corp",
-          location: "Remote",
-          description: "Looking for a senior engineer with React experience...",
-          matchScore: 95,
-          skills: ["React", "Node.js", "TypeScript"],
-          source: "linkedin"
-        },
-        // ... more jobs
-      ]
+      jobs: jobs.map(job => ({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        description: job.description,
+        matchScore: job.matchScore || 85,
+        skills: job.skills,
+        source: "linkedin"
+      }))
     }
   } catch (error) {
     console.error("Error getting job recommendations:", error)
