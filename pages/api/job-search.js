@@ -42,7 +42,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { title = '', location = 'India', keywords = '' } = req.body;
+  const { 
+    title = '', 
+    location = 'India', 
+    keywords = '',
+    page = 1,
+    pageSize = 10,
+    numPages = 1
+  } = req.body;
   
   // Combine title and keywords for the search query
   const searchQuery = [title, keywords].filter(Boolean).join(' ');
@@ -57,11 +64,15 @@ export default async function handler(req, res) {
   // Force location to India if not specified or set to India
   const searchLocation = location || 'India';
   
+  // Calculate how many pages to fetch from RapidAPI to get enough jobs
+  // RapidAPI typically returns 10 jobs per page, so we need to fetch multiple pages
+  const apiPagesToFetch = Math.max(1, Math.ceil((pageSize * page) / 10));
+  
   // Use both query and location parameters for better filtering
-  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=1&country=IN&location=${encodeURIComponent(searchLocation)}`;
+  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=${apiPagesToFetch}&country=IN&location=${encodeURIComponent(searchLocation)}`;
 
   try {
-    console.log('Making RapidAPI request for India jobs:', url);
+    console.log(`Making RapidAPI request for India jobs (Page ${page}, Size ${pageSize}):`, url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -96,7 +107,7 @@ export default async function handler(req, res) {
       console.log(`Filtered ${indiaJobs.length} jobs from India out of ${data.data.length} total jobs`);
       
       // Transform RapidAPI response to match our Job interface
-      const jobs = indiaJobs.map(job => ({
+      const allJobs = indiaJobs.map(job => ({
         id: job.job_id || Math.random().toString(36).substr(2, 9),
         title: job.job_title || 'N/A',
         company: job.employer_name || 'N/A',
@@ -114,17 +125,47 @@ export default async function handler(req, res) {
         distance: 0
       }));
       
+      // Implement pagination on the transformed jobs
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedJobs = allJobs.slice(startIndex, endIndex);
+      
+      // Calculate pagination info
+      const totalJobs = allJobs.length;
+      const totalPages = Math.ceil(totalJobs / pageSize);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      
       res.status(200).json({
         success: true,
-        jobs: jobs,
-        total: jobs.length,
-        message: `Found ${jobs.length} jobs in India`
+        jobs: paginatedJobs,
+        pagination: {
+          currentPage: page,
+          pageSize: pageSize,
+          totalJobs: totalJobs,
+          totalPages: totalPages,
+          hasNextPage: hasNextPage,
+          hasPrevPage: hasPrevPage,
+          startIndex: startIndex + 1,
+          endIndex: Math.min(endIndex, totalJobs)
+        },
+        message: `Found ${totalJobs} jobs in India (Page ${page} of ${totalPages})`
       });
     } else {
       console.log('No jobs found or API error:', data);
       res.status(200).json({
         success: false,
         jobs: [],
+        pagination: {
+          currentPage: page,
+          pageSize: pageSize,
+          totalJobs: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+          startIndex: 0,
+          endIndex: 0
+        },
         error: 'No jobs found in India'
       });
     }

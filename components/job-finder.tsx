@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Search, FileText, Upload, Clock, ExternalLink } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Loader2, Search, FileText, Upload, Clock, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
 import { findJobs } from "@/actions/job-actions"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -51,6 +52,16 @@ export default function JobFinder() {
     ]
   })
   const [jobListings, setJobListings] = useState<Job[]>([])
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    totalJobs: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    startIndex: 0,
+    endIndex: 0
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("search")
   const [resumeEntryMethod, setResumeEntryMethod] = useState<"upload" | "manual">("upload")
@@ -94,28 +105,31 @@ export default function JobFinder() {
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = async (page: number = 1) => {
     console.log('Starting job search...');
     setIsLoading(true);
     setLocationWarning(null);
     
     try {
-      console.log('Calling findJobs with params:', searchParams);
-      const results = await findJobs(searchParams, resumeData);
+      console.log('Calling findJobs with params:', { ...searchParams, page, pageSize: pagination.pageSize });
+      const results = await findJobs({ ...searchParams, page, pageSize: pagination.pageSize }, resumeData);
       console.log('Received results:', results);
       
-      if (Array.isArray(results)) {
-        setJobListings(results);
-        if (results.length > 0) {
+      if (results && results.jobs && Array.isArray(results.jobs)) {
+        setJobListings(results.jobs);
+        setPagination(results.pagination);
+        if (results.jobs.length > 0) {
           setActiveTab("results");
         }
       } else {
-        console.error('Results is not an array:', results);
+        console.error('Results is not valid:', results);
         setJobListings([]);
+        setPagination(prev => ({ ...prev, totalJobs: 0, totalPages: 0 }));
       }
     } catch (error) {
       console.error("Error finding jobs:", error);
       setJobListings([]);
+      setPagination(prev => ({ ...prev, totalJobs: 0, totalPages: 0 }));
       toast({
         title: "Error",
         description: "There was a problem finding jobs. Please try again.",
@@ -125,6 +139,17 @@ export default function JobFinder() {
       console.log('Search completed, setting loading to false');
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    handleSearch(newPage);
+  };
+
+  const handlePageSizeChange = (newPageSize: string) => {
+    const size = parseInt(newPageSize);
+    setPagination(prev => ({ ...prev, pageSize: size, currentPage: 1 }));
+    handleSearch(1);
   };
 
   return (
@@ -280,19 +305,46 @@ export default function JobFinder() {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold">Found {jobListings.length} jobs</h2>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Clock className="h-4 w-4 mr-1.5" />
-                        Save All
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <ExternalLink className="h-4 w-4 mr-1.5" />
-                        Export
-                      </Button>
+                  {/* Header with pagination info and controls */}
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <h2 className="text-2xl font-semibold">
+                        Found {pagination.totalJobs} jobs
+                      </h2>
+                      <div className="text-sm text-muted-foreground">
+                        Showing {pagination.startIndex}-{pagination.endIndex} of {pagination.totalJobs}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="pageSize" className="text-sm">Jobs per page:</Label>
+                        <Select value={pagination.pageSize.toString()} onValueChange={handlePageSizeChange}>
+                          <SelectTrigger id="pageSize" className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          <Clock className="h-4 w-4 mr-1.5" />
+                          Save All
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="h-4 w-4 mr-1.5" />
+                          Export
+                        </Button>
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Job listings */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {jobListings.map((job) => (
                       <div key={job.id}>
@@ -300,6 +352,61 @@ export default function JobFinder() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Pagination Controls */}
+                  {pagination.totalPages > 1 && (
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                      <div className="text-sm text-muted-foreground">
+                        Page {pagination.currentPage} of {pagination.totalPages}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(pagination.currentPage - 1)}
+                          disabled={!pagination.hasPrevPage || isLoading}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Previous
+                        </Button>
+                        
+                        {/* Page numbers */}
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                            const pageNum = Math.max(1, Math.min(
+                              pagination.currentPage - 2 + i,
+                              pagination.totalPages - 4 + i
+                            ));
+                            
+                            if (pageNum > pagination.totalPages) return null;
+                            
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={pageNum === pagination.currentPage ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(pageNum)}
+                                disabled={isLoading}
+                                className="w-8 h-8 p-0"
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(pagination.currentPage + 1)}
+                          disabled={!pagination.hasNextPage || isLoading}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
