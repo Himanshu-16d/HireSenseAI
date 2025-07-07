@@ -48,7 +48,15 @@ export default async function handler(req, res) {
             id: data.data[0].job_id,
             title: data.data[0].job_title,
             company: data.data[0].employer_name,
-            location: data.data[0].job_city
+            location: data.data[0].job_city,
+            // Salary information fields
+            salary_range: data.data[0].job_salary_range,
+            min_salary: data.data[0].job_min_salary,
+            max_salary: data.data[0].job_max_salary,
+            salary_currency: data.data[0].job_salary_currency,
+            salary_period: data.data[0].job_salary_period,
+            // All available fields for debugging
+            availableFields: Object.keys(data.data[0]).filter(key => key.includes('salary'))
           } : null
         };
       } else {

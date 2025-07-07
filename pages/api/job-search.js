@@ -1,5 +1,42 @@
 import fetch from 'node-fetch';
 
+// Helper function to format salary information
+function formatSalaryInfo(job) {
+  // Priority order for salary information
+  if (job.job_salary_range) {
+    return job.job_salary_range;
+  }
+  
+  if (job.job_min_salary && job.job_max_salary) {
+    const currency = job.job_salary_currency || '';
+    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
+    return `${currency} ${job.job_min_salary} - ${job.job_max_salary}${period}`.trim();
+  }
+  
+  if (job.job_min_salary) {
+    const currency = job.job_salary_currency || '';
+    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
+    return `${currency} ${job.job_min_salary}+${period}`.trim();
+  }
+  
+  if (job.job_max_salary) {
+    const currency = job.job_salary_currency || '';
+    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
+    return `Up to ${currency} ${job.job_max_salary}${period}`.trim();
+  }
+  
+  if (job.job_salary_currency) {
+    return `${job.job_salary_currency} - Salary not disclosed`;
+  }
+  
+  // Check for other potential salary fields
+  if (job.estimated_salaries && job.estimated_salaries.length > 0) {
+    return `Est: ${job.estimated_salaries[0].salary_range || 'Contact for details'}`;
+  }
+  
+  return 'Salary not disclosed';
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -69,10 +106,7 @@ export default async function handler(req, res) {
         description: job.job_description || 'No description available',
         url: job.job_apply_link || '#',
         postedDate: job.job_posted_at_datetime_utc || new Date().toISOString(),
-        salary: job.job_salary_range || 
-                job.job_min_salary || 
-                job.job_max_salary || 
-                (job.job_salary_currency ? `${job.job_salary_currency} - Salary not disclosed` : 'Salary not disclosed'),
+        salary: formatSalaryInfo(job),
         skills: job.job_required_skills || [],
         matchScore: 85, // Default match score
         source: 'RapidAPI JSsearch',
