@@ -22,7 +22,7 @@ export async function findJobs(
   try {
     console.log('Starting job search with params:', searchParams);
     
-    // Ensure location defaults to India if not specified
+    // Ensure location defaults to India if not specified but preserve user's location choice
     const finalSearchParams = {
       ...searchParams,
       location: searchParams.location || 'India',

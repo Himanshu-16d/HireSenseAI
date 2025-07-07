@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // Force location to India if not specified or set to India
+  // Force location to India if not specified, but allow specific Indian cities
   const searchLocation = location || 'India';
   
   // Calculate how many pages to fetch from RapidAPI to get enough jobs
@@ -70,8 +70,19 @@ export default async function handler(req, res) {
   const minJobsNeeded = Math.max(50, pageSize * 3); // Ensure we have at least 50 jobs or 3x the page size
   const apiPagesToFetch = Math.min(10, Math.ceil(minJobsNeeded / 10)); // Limit to 10 pages max to avoid API limits
   
+  // Build search URL with proper location handling
+  // If user specifies a specific Indian city, use it directly in the query
+  let searchQueryWithLocation = searchQuery;
+  if (searchLocation !== 'India' && searchLocation.toLowerCase().includes('india') === false) {
+    // Add India to the location if it's not already included
+    searchQueryWithLocation = `${searchQuery} ${searchLocation} India`;
+  } else if (searchLocation !== 'India') {
+    // Use the location as provided (e.g., "Delhi, India" or "Mumbai, India")
+    searchQueryWithLocation = `${searchQuery} ${searchLocation}`;
+  }
+  
   // Use both query and location parameters for better filtering
-  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=${apiPagesToFetch}&country=IN&location=${encodeURIComponent(searchLocation)}`;
+  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQueryWithLocation)}&page=1&num_pages=${apiPagesToFetch}&country=IN&location=${encodeURIComponent(searchLocation)}`;
 
   try {
     console.log(`Making RapidAPI request for India jobs (Page ${page}, Size ${pageSize}):`, url);
@@ -92,18 +103,44 @@ export default async function handler(req, res) {
     console.log('RapidAPI response status:', data.status);
     
     if (data.status === 'OK' && data.data && data.data.length > 0) {
-      // Filter jobs to ensure they are from India
+      // Filter jobs to ensure they are from India and match the specified location
       const indiaJobs = data.data.filter(job => {
         const jobLocation = job.job_country || '';
         const jobCity = job.job_city || '';
         const jobState = job.job_state || '';
+        const fullJobLocation = `${jobCity} ${jobState} ${jobLocation}`.toLowerCase();
         
-        // Check if the job is from India
-        return jobLocation.toLowerCase().includes('india') || 
-               jobLocation.toLowerCase().includes('in') ||
-               jobCity.toLowerCase().includes('india') ||
-               jobState.toLowerCase().includes('india') ||
-               job.job_country === 'IN';
+        // First check if the job is from India
+        const isIndiaJob = jobLocation.toLowerCase().includes('india') || 
+                          jobLocation.toLowerCase().includes('in') ||
+                          jobCity.toLowerCase().includes('india') ||
+                          jobState.toLowerCase().includes('india') ||
+                          job.job_country === 'IN';
+        
+        if (!isIndiaJob) {
+          return false;
+        }
+        
+        // If user specified a specific location (not just "India"), filter by that location
+        if (searchLocation.toLowerCase() !== 'india') {
+          const searchLocationLower = searchLocation.toLowerCase();
+          const locationKeywords = searchLocationLower.split(/[,\s]+/).filter(word => 
+            word.length > 2 && !['india', 'in'].includes(word)
+          );
+          
+          // Check if any of the location keywords match the job location
+          if (locationKeywords.length > 0) {
+            const hasLocationMatch = locationKeywords.some(keyword => 
+              fullJobLocation.includes(keyword) ||
+              jobCity.toLowerCase().includes(keyword) ||
+              jobState.toLowerCase().includes(keyword)
+            );
+            
+            return hasLocationMatch;
+          }
+        }
+        
+        return true; // Include all India jobs if no specific location filtering
       });
       
       console.log(`Filtered ${indiaJobs.length} jobs from India out of ${data.data.length} total jobs`);

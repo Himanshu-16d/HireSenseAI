@@ -39,7 +39,17 @@ function formatSalaryInfo(job) {
 
 // Helper function to make RapidAPI request
 async function fetchJobsFromRapidAPI(searchQuery, searchLocation, numPages = 5) {
-  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=${numPages}&country=IN&location=${encodeURIComponent(searchLocation)}`;
+  // Build search query with location if it's not just "India"
+  let queryWithLocation = searchQuery;
+  if (searchLocation !== 'India' && searchLocation.toLowerCase().includes('india') === false) {
+    // Add India to the location if it's not already included
+    queryWithLocation = `${searchQuery} ${searchLocation} India`;
+  } else if (searchLocation !== 'India') {
+    // Use the location as provided (e.g., "Delhi, India" or "Mumbai, India")
+    queryWithLocation = `${searchQuery} ${searchLocation}`;
+  }
+  
+  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(queryWithLocation)}&page=1&num_pages=${numPages}&country=IN&location=${encodeURIComponent(searchLocation)}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -81,7 +91,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // Force location to India if not specified or set to India
+  // Force location to India if not specified, but allow specific Indian cities
   const searchLocation = location || 'India';
   
   try {
@@ -91,15 +101,28 @@ export default async function handler(req, res) {
     
     if (enhanced && pageSize > 10) {
       // For larger page sizes, make multiple diverse searches
-      const searchVariations = [
+      const baseSearches = [
         searchQuery,
         `${title} ${searchLocation}`,
         `${keywords} jobs ${searchLocation}`,
         `${title} developer ${searchLocation}`,
         `${title} engineer ${searchLocation}`
-      ].filter((query, index, arr) => arr.indexOf(query) === index && query.trim()); // Remove duplicates and empty queries
+      ];
       
-      console.log('Using search variations:', searchVariations);
+      // If location is not just "India", add more location-specific variations
+      if (searchLocation.toLowerCase() !== 'india') {
+        baseSearches.push(
+          `${searchQuery} in ${searchLocation}`,
+          `${title} ${searchLocation} India`,
+          `${keywords} ${searchLocation} jobs`
+        );
+      }
+      
+      const searchVariations = baseSearches
+        .filter((query, index, arr) => arr.indexOf(query) === index && query.trim()) // Remove duplicates and empty queries
+        .filter(query => query.length > 3); // Remove too short queries
+      
+      console.log('Using location-aware search variations:', searchVariations);
       
       // Fetch from multiple search queries to get more diverse results
       const fetchPromises = searchVariations.slice(0, 3).map(async (query) => {
@@ -134,13 +157,39 @@ export default async function handler(req, res) {
         const jobLocation = job.job_country || '';
         const jobCity = job.job_city || '';
         const jobState = job.job_state || '';
+        const fullJobLocation = `${jobCity} ${jobState} ${jobLocation}`.toLowerCase();
         
-        // Check if the job is from India
-        return jobLocation.toLowerCase().includes('india') || 
-               jobLocation.toLowerCase().includes('in') ||
-               jobCity.toLowerCase().includes('india') ||
-               jobState.toLowerCase().includes('india') ||
-               job.job_country === 'IN';
+        // First check if the job is from India
+        const isIndiaJob = jobLocation.toLowerCase().includes('india') || 
+                          jobLocation.toLowerCase().includes('in') ||
+                          jobCity.toLowerCase().includes('india') ||
+                          jobState.toLowerCase().includes('india') ||
+                          job.job_country === 'IN';
+        
+        if (!isIndiaJob) {
+          return false;
+        }
+        
+        // If user specified a specific location (not just "India"), filter by that location
+        if (searchLocation.toLowerCase() !== 'india') {
+          const searchLocationLower = searchLocation.toLowerCase();
+          const locationKeywords = searchLocationLower.split(/[,\s]+/).filter(word => 
+            word.length > 2 && !['india', 'in'].includes(word)
+          );
+          
+          // Check if any of the location keywords match the job location
+          if (locationKeywords.length > 0) {
+            const hasLocationMatch = locationKeywords.some(keyword => 
+              fullJobLocation.includes(keyword) ||
+              jobCity.toLowerCase().includes(keyword) ||
+              jobState.toLowerCase().includes(keyword)
+            );
+            
+            return hasLocationMatch;
+          }
+        }
+        
+        return true; // Include all India jobs if no specific location filtering
       });
       
       console.log(`Filtered ${indiaJobs.length} unique jobs from India out of ${allJobsData.length} total jobs`);
