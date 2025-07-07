@@ -37,6 +37,26 @@ function formatSalaryInfo(job) {
   return 'Salary not disclosed';
 }
 
+// Helper function to make RapidAPI request
+async function fetchJobsFromRapidAPI(searchQuery, searchLocation, numPages = 5) {
+  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=${numPages}&country=IN&location=${encodeURIComponent(searchLocation)}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+      'X-RapidAPI-Host': process.env.RAPIDAPI_HOST,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`RapidAPI request failed: ${response.status} ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  return data;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -48,7 +68,7 @@ export default async function handler(req, res) {
     keywords = '',
     page = 1,
     pageSize = 10,
-    numPages = 1
+    enhanced = false
   } = req.body;
   
   // Combine title and keywords for the search query
@@ -64,36 +84,53 @@ export default async function handler(req, res) {
   // Force location to India if not specified or set to India
   const searchLocation = location || 'India';
   
-  // Calculate how many pages to fetch from RapidAPI to get enough jobs
-  // RapidAPI typically returns 10 jobs per page, so we need to fetch multiple pages
-  // For better user experience, let's fetch more pages to have a larger pool of jobs
-  const minJobsNeeded = Math.max(50, pageSize * 3); // Ensure we have at least 50 jobs or 3x the page size
-  const apiPagesToFetch = Math.min(10, Math.ceil(minJobsNeeded / 10)); // Limit to 10 pages max to avoid API limits
-  
-  // Use both query and location parameters for better filtering
-  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}&page=1&num_pages=${apiPagesToFetch}&country=IN&location=${encodeURIComponent(searchLocation)}`;
-
   try {
-    console.log(`Making RapidAPI request for India jobs (Page ${page}, Size ${pageSize}):`, url);
+    console.log(`Making enhanced RapidAPI request for India jobs (Page ${page}, Size ${pageSize})`);
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-        'X-RapidAPI-Host': process.env.RAPIDAPI_HOST,
-      },
-    });
+    let allJobsData = [];
     
-    if (!response.ok) {
-      throw new Error(`RapidAPI request failed: ${response.status} ${response.statusText}`);
+    if (enhanced && pageSize > 10) {
+      // For larger page sizes, make multiple diverse searches
+      const searchVariations = [
+        searchQuery,
+        `${title} ${searchLocation}`,
+        `${keywords} jobs ${searchLocation}`,
+        `${title} developer ${searchLocation}`,
+        `${title} engineer ${searchLocation}`
+      ].filter((query, index, arr) => arr.indexOf(query) === index && query.trim()); // Remove duplicates and empty queries
+      
+      console.log('Using search variations:', searchVariations);
+      
+      // Fetch from multiple search queries to get more diverse results
+      const fetchPromises = searchVariations.slice(0, 3).map(async (query) => {
+        try {
+          const data = await fetchJobsFromRapidAPI(query, searchLocation, 5);
+          return data.data || [];
+        } catch (error) {
+          console.warn(`Failed to fetch jobs for query "${query}":`, error.message);
+          return [];
+        }
+      });
+      
+      const resultsArray = await Promise.all(fetchPromises);
+      allJobsData = resultsArray.flat();
+    } else {
+      // Standard single search
+      const numPages = Math.min(10, Math.max(5, Math.ceil(pageSize / 10)));
+      const data = await fetchJobsFromRapidAPI(searchQuery, searchLocation, numPages);
+      allJobsData = data.data || [];
     }
     
-    const data = await response.json();
-    console.log('RapidAPI response status:', data.status);
-    
-    if (data.status === 'OK' && data.data && data.data.length > 0) {
-      // Filter jobs to ensure they are from India
-      const indiaJobs = data.data.filter(job => {
+    if (allJobsData.length > 0) {
+      // Filter jobs to ensure they are from India and remove duplicates
+      const seenJobIds = new Set();
+      const indiaJobs = allJobsData.filter(job => {
+        // Remove duplicates
+        if (seenJobIds.has(job.job_id)) {
+          return false;
+        }
+        seenJobIds.add(job.job_id);
+        
         const jobLocation = job.job_country || '';
         const jobCity = job.job_city || '';
         const jobState = job.job_state || '';
@@ -106,7 +143,7 @@ export default async function handler(req, res) {
                job.job_country === 'IN';
       });
       
-      console.log(`Filtered ${indiaJobs.length} jobs from India out of ${data.data.length} total jobs`);
+      console.log(`Filtered ${indiaJobs.length} unique jobs from India out of ${allJobsData.length} total jobs`);
       
       // Transform RapidAPI response to match our Job interface
       const allJobs = indiaJobs.map(job => ({
@@ -151,10 +188,11 @@ export default async function handler(req, res) {
           startIndex: startIndex + 1,
           endIndex: Math.min(endIndex, totalJobs)
         },
-        message: `Found ${totalJobs} jobs in India (Page ${page} of ${totalPages})`
+        message: `Found ${totalJobs} jobs in India (Page ${page} of ${totalPages})`,
+        enhanced: enhanced
       });
     } else {
-      console.log('No jobs found or API error:', data);
+      console.log('No jobs found');
       res.status(200).json({
         success: false,
         jobs: [],

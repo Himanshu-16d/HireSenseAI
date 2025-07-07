@@ -21,11 +21,15 @@ export const searchJobs = async (params: JobSearchParams & { page?: number; page
       ...params,
       location: params.location || 'India',
       page: params.page || 1,
-      pageSize: params.pageSize || 10
+      pageSize: params.pageSize || 10,
+      enhanced: (params.pageSize || 10) > 10 // Use enhanced search for larger page sizes
     };
 
+    // Choose API endpoint based on page size
+    const apiEndpoint = searchParams.enhanced ? '/api/job-search-enhanced' : '/api/job-search';
+
     // Make API call to RapidAPI JSsearch for real job data
-    const response = await fetch('/api/job-search', {
+    const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

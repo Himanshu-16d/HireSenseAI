@@ -27,7 +27,8 @@ export async function findJobs(
       ...searchParams,
       location: searchParams.location || 'India',
       page: searchParams.page || 1,
-      pageSize: searchParams.pageSize || 10
+      pageSize: searchParams.pageSize || 10,
+      enhanced: (searchParams.pageSize || 10) > 10 // Use enhanced search for larger page sizes
     };
     
     console.log('Final search params with India default:', finalSearchParams);
@@ -40,8 +41,9 @@ export async function findJobs(
     // Construct the base URL
     const baseUrl = `${protocol}://${host}`;
     
-    // Use the job-search API endpoint for real job data
-    const searchUrl = `${baseUrl}/api/job-search`;
+    // Choose API endpoint based on page size
+    const apiEndpoint = finalSearchParams.enhanced ? '/api/job-search-enhanced' : '/api/job-search';
+    const searchUrl = `${baseUrl}${apiEndpoint}`;
 
     console.log('Fetching jobs from URL:', searchUrl);
     

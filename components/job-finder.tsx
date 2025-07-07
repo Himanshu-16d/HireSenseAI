@@ -149,6 +149,15 @@ export default function JobFinder() {
   const handlePageSizeChange = (newPageSize: string) => {
     const size = parseInt(newPageSize);
     setPagination(prev => ({ ...prev, pageSize: size, currentPage: 1 }));
+    
+    // Show informative toast for enhanced search
+    if (size > 10) {
+      toast({
+        title: "Enhanced Search Activated",
+        description: `Searching for up to ${size} jobs using advanced search techniques...`,
+      });
+    }
+    
     handleSearch(1);
   };
 
@@ -314,6 +323,11 @@ export default function JobFinder() {
                       <div className="text-sm text-muted-foreground">
                         Showing {pagination.startIndex}-{pagination.endIndex} of {pagination.totalJobs}
                       </div>
+                      {pagination.pageSize > 10 && (
+                        <Badge variant="secondary" className="text-xs">
+                          Enhanced Search
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
@@ -330,6 +344,16 @@ export default function JobFinder() {
                             <SelectItem value="100">100</SelectItem>
                           </SelectContent>
                         </Select>
+                        {pagination.pageSize <= 10 && pagination.totalJobs >= 10 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handlePageSizeChange("50")}
+                            className="text-xs ml-2"
+                          >
+                            View More Jobs
+                          </Button>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm">
