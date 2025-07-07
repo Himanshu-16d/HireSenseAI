@@ -69,7 +69,10 @@ export default async function handler(req, res) {
         description: job.job_description || 'No description available',
         url: job.job_apply_link || '#',
         postedDate: job.job_posted_at_datetime_utc || new Date().toISOString(),
-        salary: job.job_salary_range || 'Salary not disclosed',
+        salary: job.job_salary_range || 
+                job.job_min_salary || 
+                job.job_max_salary || 
+                (job.job_salary_currency ? `${job.job_salary_currency} - Salary not disclosed` : 'Salary not disclosed'),
         skills: job.job_required_skills || [],
         matchScore: 85, // Default match score
         source: 'RapidAPI JSsearch',

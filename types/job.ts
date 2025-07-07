@@ -6,7 +6,7 @@ export interface Job {
   description: string
   url: string
   postedDate: string
-  salary?: string
+  salary: string // Made mandatory to ensure salary always appears
   skills: string[]
   matchScore: number
   source: string

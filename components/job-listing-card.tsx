@@ -48,12 +48,10 @@ export default function JobListingCard({ job }: JobListingCardProps) {
             <MapPin className="h-4 w-4 mr-1.5" />
             {job.location}
           </div>
-          {job.salary && (
-            <div className="flex items-center bg-muted/50 px-2 py-1 rounded-md">
-              <DollarSign className="h-4 w-4 mr-1.5" />
-              {job.salary}
-            </div>
-          )}
+          <div className="flex items-center bg-green-50 px-2 py-1 rounded-md border border-green-200">
+            <DollarSign className="h-4 w-4 mr-1.5 text-green-600" />
+            <span className="text-green-700 font-medium">{job.salary}</span>
+          </div>
           <div className="flex items-center bg-muted/50 px-2 py-1 rounded-md">
             <Calendar className="h-4 w-4 mr-1.5" />
             {formatDate(job.postedDate)}
