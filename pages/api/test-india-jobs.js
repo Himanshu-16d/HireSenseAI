@@ -1,4 +1,4 @@
-// Test script to verify India location filtering
+// Test script to verify India location filtering with Adzuna API
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
@@ -8,12 +8,13 @@ export default async function handler(req, res) {
 
   const results = {
     timestamp: new Date().toISOString(),
+    testType: 'India Jobs Filter Test (Adzuna API)',
     tests: []
   };
 
   // Test 1: Search with India location
   try {
-    console.log('Testing India location filtering...');
+    console.log('Testing Adzuna India location filtering...');
     
     const testPayload = {
       title: 'software engineer',
@@ -32,22 +33,23 @@ export default async function handler(req, res) {
     if (response.ok) {
       const data = await response.json();
       results.tests.push({
-        name: 'India Location Filter',
+        name: 'Adzuna India Location Filter',
         success: data.success,
         jobsFound: data.jobs ? data.jobs.length : 0,
         locations: data.jobs ? data.jobs.map(job => job.location).slice(0, 5) : [],
-        message: data.message || 'No message'
+        message: data.message || 'No message',
+        source: data.source || 'Unknown'
       });
     } else {
       results.tests.push({
-        name: 'India Location Filter',
+        name: 'Adzuna India Location Filter',
         success: false,
         error: `HTTP ${response.status}: ${response.statusText}`
       });
     }
   } catch (error) {
     results.tests.push({
-      name: 'India Location Filter',
+      name: 'Adzuna India Location Filter',
       success: false,
       error: error.message
     });

@@ -1,4 +1,4 @@
-// Test endpoint to verify location-based job search functionality
+// Test endpoint to verify location-based job search functionality with Adzuna API
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   const results = {
     timestamp: new Date().toISOString(),
-    testType: 'Location-Based Job Search Test',
+    testType: 'Location-Based Job Search Test (Adzuna API)',
     tests: []
   };
 
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
   for (const test of locationTests) {
     try {
-      console.log(`Testing location search: ${test.name}`);
+      console.log(`Testing Adzuna location search: ${test.name}`);
       
       const response = await fetch(`${req.headers.host?.includes('localhost') ? 'http' : 'https'}://${req.headers.host}/api/job-search`, {
         method: 'POST',

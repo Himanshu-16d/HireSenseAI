@@ -1,40 +1,57 @@
 import fetch from 'node-fetch';
 
-// Helper function to format salary information
+// Helper function to format salary information from Adzuna
 function formatSalaryInfo(job) {
-  // Priority order for salary information
-  if (job.job_salary_range) {
-    return job.job_salary_range;
+  // Adzuna provides salary_min and salary_max
+  if (job.salary_min && job.salary_max) {
+    const currency = job.currency || '₹';
+    return `${currency} ${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()} per year`;
   }
   
-  if (job.job_min_salary && job.job_max_salary) {
-    const currency = job.job_salary_currency || '';
-    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
-    return `${currency} ${job.job_min_salary} - ${job.job_max_salary}${period}`.trim();
+  if (job.salary_min) {
+    const currency = job.currency || '₹';
+    return `${currency} ${job.salary_min.toLocaleString()}+ per year`;
   }
   
-  if (job.job_min_salary) {
-    const currency = job.job_salary_currency || '';
-    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
-    return `${currency} ${job.job_min_salary}+${period}`.trim();
+  if (job.salary_max) {
+    const currency = job.currency || '₹';
+    return `Up to ${currency} ${job.salary_max.toLocaleString()} per year`;
   }
   
-  if (job.job_max_salary) {
-    const currency = job.job_salary_currency || '';
-    const period = job.job_salary_period ? ` per ${job.job_salary_period}` : '';
-    return `Up to ${currency} ${job.job_max_salary}${period}`.trim();
-  }
-  
-  if (job.job_salary_currency) {
-    return `${job.job_salary_currency} - Salary not disclosed`;
-  }
-  
-  // Check for other potential salary fields
-  if (job.estimated_salaries && job.estimated_salaries.length > 0) {
-    return `Est: ${job.estimated_salaries[0].salary_range || 'Contact for details'}`;
+  // Check for salary in description as fallback
+  if (job.description) {
+    const salaryMatch = job.description.match(/(?:₹|rs\.?|rupees?|inr)\s*(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|lac|k|thousand)?/i);
+    if (salaryMatch) {
+      return `₹ ${salaryMatch[1]} (from description)`;
+    }
   }
   
   return 'Salary not disclosed';
+}
+
+// Helper function to extract skills from job description
+function extractSkills(description) {
+  if (!description) return [];
+  
+  const commonSkills = [
+    'javascript', 'python', 'java', 'react', 'angular', 'vue', 'node.js', 'express',
+    'mongodb', 'mysql', 'postgresql', 'html', 'css', 'typescript', 'php', 'laravel',
+    'django', 'spring', 'kubernetes', 'docker', 'aws', 'azure', 'gcp', 'git',
+    'jenkins', 'terraform', 'ansible', 'linux', 'windows', 'api', 'rest', 'graphql',
+    'machine learning', 'data science', 'ai', 'sql', 'nosql', 'redis', 'kafka',
+    'microservices', 'devops', 'ci/cd', 'testing', 'selenium', 'jest', 'cypress'
+  ];
+  
+  const foundSkills = [];
+  const descriptionLower = description.toLowerCase();
+  
+  commonSkills.forEach(skill => {
+    if (descriptionLower.includes(skill.toLowerCase())) {
+      foundSkills.push(skill);
+    }
+  });
+  
+  return foundSkills.slice(0, 10); // Limit to 10 skills
 }
 
 export default async function handler(req, res) {
@@ -64,58 +81,73 @@ export default async function handler(req, res) {
   // Force location to India if not specified, but allow specific Indian cities
   const searchLocation = location || 'India';
   
-  // Calculate how many pages to fetch from RapidAPI to get enough jobs
-  // RapidAPI typically returns 10 jobs per page, so we need to fetch multiple pages
-  // For better user experience, let's fetch more pages to have a larger pool of jobs
-  const minJobsNeeded = Math.max(50, pageSize * 3); // Ensure we have at least 50 jobs or 3x the page size
-  const apiPagesToFetch = Math.min(10, Math.ceil(minJobsNeeded / 10)); // Limit to 10 pages max to avoid API limits
+  // Adzuna API configuration
+  const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
+  const ADZUNA_APP_KEY = process.env.ADZUNA_APP_KEY;
   
-  // Build search URL with proper location handling
-  // If user specifies a specific Indian city, use it directly in the query
-  let searchQueryWithLocation = searchQuery;
-  if (searchLocation !== 'India' && searchLocation.toLowerCase().includes('india') === false) {
-    // Add India to the location if it's not already included
-    searchQueryWithLocation = `${searchQuery} ${searchLocation} India`;
-  } else if (searchLocation !== 'India') {
-    // Use the location as provided (e.g., "Delhi, India" or "Mumbai, India")
-    searchQueryWithLocation = `${searchQuery} ${searchLocation}`;
+  if (!ADZUNA_APP_ID || !ADZUNA_APP_KEY) {
+    return res.status(500).json({
+      success: false,
+      error: 'Adzuna API credentials not configured'
+    });
+  }
+
+  // Calculate how many results to fetch from Adzuna
+  // Adzuna allows up to 50 results per page
+  const resultsPerPage = Math.min(50, pageSize * 3); // Get more results to have a good pool for filtering
+  
+  // Build Adzuna API URL for India
+  // Adzuna country code for India is 'in'
+  let adzunaLocation = '';
+  if (searchLocation.toLowerCase() !== 'india') {
+    // If user specified a specific city, include it in the location filter
+    adzunaLocation = `&where=${encodeURIComponent(searchLocation)}`;
   }
   
-  // Use both query and location parameters for better filtering
-  const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(searchQueryWithLocation)}&page=1&num_pages=${apiPagesToFetch}&country=IN&location=${encodeURIComponent(searchLocation)}`;
+  const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?` +
+    `app_id=${ADZUNA_APP_ID}` +
+    `&app_key=${ADZUNA_APP_KEY}` +
+    `&results_per_page=${resultsPerPage}` +
+    `&what=${encodeURIComponent(searchQuery)}` +
+    adzunaLocation +
+    `&content-type=application/json`;
 
   try {
-    console.log(`Making RapidAPI request for India jobs (Page ${page}, Size ${pageSize}):`, url);
+    console.log(`Making Adzuna API request for India jobs (Page ${page}, Size ${pageSize}):`, url);
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-        'X-RapidAPI-Host': process.env.RAPIDAPI_HOST,
+        'Content-Type': 'application/json',
       },
     });
     
     if (!response.ok) {
-      throw new Error(`RapidAPI request failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Adzuna API request failed: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('RapidAPI response status:', data.status);
+    console.log('Adzuna API response:', {
+      count: data.count,
+      resultsFound: data.results?.length || 0
+    });
     
-    if (data.status === 'OK' && data.data && data.data.length > 0) {
+    if (data.results && data.results.length > 0) {
       // Filter jobs to ensure they are from India and match the specified location
-      const indiaJobs = data.data.filter(job => {
-        const jobLocation = job.job_country || '';
-        const jobCity = job.job_city || '';
-        const jobState = job.job_state || '';
-        const fullJobLocation = `${jobCity} ${jobState} ${jobLocation}`.toLowerCase();
+      const indiaJobs = data.results.filter(job => {
+        const jobLocation = job.location?.display_name || '';
+        const jobAreaList = job.location?.area || [];
         
-        // First check if the job is from India
-        const isIndiaJob = jobLocation.toLowerCase().includes('india') || 
-                          jobLocation.toLowerCase().includes('in') ||
-                          jobCity.toLowerCase().includes('india') ||
-                          jobState.toLowerCase().includes('india') ||
-                          job.job_country === 'IN';
+        // Build a comprehensive location string for filtering
+        const allLocationInfo = [
+          jobLocation,
+          ...jobAreaList
+        ].join(' ').toLowerCase();
+        
+        // Ensure the job is from India
+        const isIndiaJob = allLocationInfo.includes('india') || 
+                          allLocationInfo.includes('bharath') ||
+                          allLocationInfo.includes('bharat');
         
         if (!isIndiaJob) {
           return false;
@@ -131,9 +163,7 @@ export default async function handler(req, res) {
           // Check if any of the location keywords match the job location
           if (locationKeywords.length > 0) {
             const hasLocationMatch = locationKeywords.some(keyword => 
-              fullJobLocation.includes(keyword) ||
-              jobCity.toLowerCase().includes(keyword) ||
-              jobState.toLowerCase().includes(keyword)
+              allLocationInfo.includes(keyword)
             );
             
             return hasLocationMatch;
@@ -143,25 +173,25 @@ export default async function handler(req, res) {
         return true; // Include all India jobs if no specific location filtering
       });
       
-      console.log(`Filtered ${indiaJobs.length} jobs from India out of ${data.data.length} total jobs`);
+      console.log(`Filtered ${indiaJobs.length} jobs from India out of ${data.results.length} total jobs`);
       
-      // Transform RapidAPI response to match our Job interface
+      // Transform Adzuna response to match our Job interface
       const allJobs = indiaJobs.map(job => ({
-        id: job.job_id || Math.random().toString(36).substr(2, 9),
-        title: job.job_title || 'N/A',
-        company: job.employer_name || 'N/A',
-        location: job.job_city && job.job_state ? 
-          `${job.job_city}, ${job.job_state}, India` : 
-          (job.job_city ? `${job.job_city}, India` : 'India'),
-        description: job.job_description || 'No description available',
-        url: job.job_apply_link || '#',
-        postedDate: job.job_posted_at_datetime_utc || new Date().toISOString(),
+        id: job.id || Math.random().toString(36).substr(2, 9),
+        title: job.title || 'N/A',
+        company: job.company?.display_name || 'N/A',
+        location: job.location?.display_name || 'India',
+        description: job.description || 'No description available',
+        url: job.redirect_url || job.url || '#',
+        postedDate: job.created || new Date().toISOString(),
         salary: formatSalaryInfo(job),
-        skills: job.job_required_skills || [],
+        skills: extractSkills(job.description),
         matchScore: 85, // Default match score
-        source: 'RapidAPI JSsearch',
+        source: 'Adzuna',
         commuteTime: 0,
-        distance: 0
+        distance: 0,
+        category: job.category?.label || 'General',
+        contract_type: job.contract_type || 'Not specified'
       }));
       
       // Implement pagination on the transformed jobs
@@ -170,7 +200,7 @@ export default async function handler(req, res) {
       const paginatedJobs = allJobs.slice(startIndex, endIndex);
       
       // Calculate pagination info
-      const totalJobs = allJobs.length;
+      const totalJobs = Math.min(data.count || allJobs.length, allJobs.length);
       const totalPages = Math.ceil(totalJobs / pageSize);
       const hasNextPage = page < totalPages;
       const hasPrevPage = page > 1;
@@ -188,10 +218,11 @@ export default async function handler(req, res) {
           startIndex: startIndex + 1,
           endIndex: Math.min(endIndex, totalJobs)
         },
-        message: `Found ${totalJobs} jobs in India (Page ${page} of ${totalPages})`
+        message: `Found ${totalJobs} jobs in India (Page ${page} of ${totalPages})`,
+        source: 'Adzuna API'
       });
     } else {
-      console.log('No jobs found or API error:', data);
+      console.log('No jobs found from Adzuna API');
       res.status(200).json({
         success: false,
         jobs: [],
@@ -205,14 +236,16 @@ export default async function handler(req, res) {
           startIndex: 0,
           endIndex: 0
         },
-        error: 'No jobs found in India'
+        error: 'No jobs found in India',
+        source: 'Adzuna API'
       });
     }
   } catch (error) {
-    console.error('RapidAPI error:', error);
+    console.error('Adzuna API error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Failed to fetch jobs from India' 
+      error: error.message || 'Failed to fetch jobs from India',
+      source: 'Adzuna API'
     });
   }
 }
